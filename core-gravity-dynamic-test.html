@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nucleus Core Gravity Dynamic Test</title>
+  <style>
+    :root {
+      --bg0: #061018;
+      --bg1: #0d2130;
+      --ink: #e5f5f0;
+      --muted: #88a7b6;
+      --cyan: #46d9ff;
+      --teal: #3ff3bf;
+      --amber: #ffb14a;
+      --coral: #ff4f4f;
+      --card: rgba(10, 22, 32, 0.82);
+      --border: rgba(113, 203, 236, 0.14);
+      font-family: Bahnschrift, "Aptos", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 20% 14%, rgba(107, 220, 255, 0.11), transparent 24%),
+        radial-gradient(circle at 82% 10%, rgba(127, 240, 213, 0.12), transparent 22%),
+        linear-gradient(160deg, var(--bg0), var(--bg1));
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(rgba(115, 191, 224, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(115, 191, 224, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(circle at center, black 46%, transparent 88%);
+      pointer-events: none;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .shell {
+      width: min(1460px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 28px 0 44px;
+    }
+
+    .headline {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: rgba(107, 220, 255, 0.10);
+      border: 1px solid rgba(107, 220, 255, 0.20);
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 4vw, 4.4rem);
+      line-height: 0.95;
+      letter-spacing: -0.045em;
+      max-width: 14ch;
+    }
+
+    .headline p {
+      max-width: 78ch;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .legend-wrap {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(14, 31, 44, 0.92), var(--card));
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+    }
+
+    .legend-item,
+    .runtime-chip,
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(107, 220, 255, 0.14);
+      color: #c8dce7;
+      font-size: 0.88rem;
+    }
+
+    .swatch,
+    .runtime-chip::before {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      box-shadow: 0 0 14px currentColor;
+      color: var(--muted);
+      background: currentColor;
+      content: "";
+      flex: 0 0 auto;
+    }
+
+    .swatch.healthy { color: var(--teal); }
+    .swatch.degraded { color: var(--amber); }
+    .swatch.critical { color: var(--coral); }
+
+    .swatch.release {
+      background: transparent;
+      border: 2px solid var(--cyan);
+      color: var(--cyan);
+      box-shadow: none;
+    }
+
+    .swatch.scaling {
+      background: transparent;
+      border: 2px dashed rgba(63, 243, 191, 0.72);
+      color: rgba(63, 243, 191, 0.72);
+      box-shadow: none;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .proto-card {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(14, 31, 44, 0.92), var(--card));
+      border: 1px solid var(--border);
+      box-shadow: 0 26px 80px rgba(0, 0, 0, 0.36);
+      overflow: hidden;
+      backdrop-filter: blur(18px);
+    }
+
+    .proto-copy {
+      display: grid;
+      gap: 8px;
+    }
+
+    .proto-copy p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .toolbar {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(107, 220, 255, 0.10);
+      background: rgba(7, 17, 26, 0.48);
+    }
+
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .control-button {
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(121, 237, 255, 0.16);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .control-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(121, 237, 255, 0.28);
+      background: rgba(121, 237, 255, 0.08);
+    }
+
+    .control-button.primary {
+      border-color: rgba(121, 237, 255, 0.34);
+      background: linear-gradient(180deg, rgba(121, 237, 255, 0.24), rgba(63, 243, 191, 0.10));
+    }
+
+    .toolbar-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .toolbar-split {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .zoom-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .zoom-readout {
+      min-width: 72px;
+      justify-content: center;
+    }
+
+    .status-line {
+      padding: 10px 12px;
+      border-radius: 14px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(107, 220, 255, 0.08);
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+    }
+
+    .runtime-chip {
+      border-color: color-mix(in srgb, var(--domain-color) 34%, rgba(121, 237, 255, 0.12));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--domain-color) 8%, transparent);
+    }
+
+    .runtime-chip::before {
+      color: var(--domain-color);
+    }
+
+    .scene {
+      position: relative;
+      min-height: 760px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(107, 220, 255, 0.08);
+      background:
+        radial-gradient(circle at center, rgba(107, 220, 255, 0.05), transparent 38%),
+        linear-gradient(180deg, rgba(5, 11, 17, 0.24), rgba(7, 15, 22, 0.88));
+      isolation: isolate;
+    }
+
+    .scene::before,
+    .scene::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .scene::before {
+      background:
+        linear-gradient(rgba(107, 220, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(107, 220, 255, 0.05) 1px, transparent 1px);
+      background-size: 34px 34px;
+      opacity: 0.58;
+      mask-image: radial-gradient(circle at center, black 40%, transparent 92%);
+    }
+
+    .scene::after {
+      background: radial-gradient(circle at center, rgba(7, 17, 24, 0), rgba(5, 12, 18, 0.58) 72%);
+    }
+
+    .scene-note {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      z-index: 2;
+      max-width: min(480px, calc(100% - 248px));
+      padding: 8px 11px;
+      border-radius: 14px;
+      font-size: 0.86rem;
+      line-height: 1.35;
+      color: var(--muted);
+      background: rgba(5, 13, 20, 0.52);
+      border: 1px solid rgba(107, 220, 255, 0.10);
+      backdrop-filter: blur(12px);
+      transition: opacity 150ms ease, transform 150ms ease;
+    }
+
+    .release-banner {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+      color: #d9faff;
+      background: rgba(6, 18, 28, 0.58);
+      border: 1px solid rgba(121, 237, 255, 0.16);
+      backdrop-filter: blur(12px);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+
+    .release-banner strong {
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .release-banner::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: radial-gradient(circle, white, var(--cyan) 62%, transparent 90%);
+      box-shadow: 0 0 12px rgba(121, 237, 255, 0.42);
+      animation: glow 1.4s infinite ease-in-out;
+    }
+
+    .domain-indicator {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+      color: #e7f7fb;
+      background: rgba(6, 18, 28, 0.62);
+      border: 1px solid rgba(121, 237, 255, 0.16);
+      backdrop-filter: blur(12px);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 150ms ease, transform 150ms ease;
+      pointer-events: none;
+    }
+
+    .domain-indicator::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--domain-color, rgba(121, 237, 255, 0.92));
+      box-shadow: 0 0 12px color-mix(in srgb, var(--domain-color, rgba(121, 237, 255, 0.92)) 42%, transparent);
+    }
+
+    .domain-indicator strong {
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .scene.has-hover .scene-note,
+    .scene.has-focus .scene-note,
+    .scene.has-domain-hover .scene-note {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+
+    .scene.has-domain-hover .domain-indicator {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .domain-layer,
+    .edge-layer,
+    .node-layer {
+      position: absolute;
+      inset: 0;
+    }
+
+    .domain-layer {
+      z-index: 0;
+      overflow: visible;
+      pointer-events: auto;
+    }
+
+    .domain-region { isolation: isolate; }
+
+    .domain-glow-layer {
+      opacity: 0.11;
+      pointer-events: none;
+    }
+
+    .domain-shell-layer {
+      opacity: 0.13;
+      pointer-events: none;
+    }
+
+    .domain-fill-layer {
+      opacity: 0.055;
+      pointer-events: none;
+    }
+
+    .domain-structure-layer {
+      opacity: 0.055;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .domain-blob-circle,
+    .domain-blob-bridge {
+      vector-effect: non-scaling-stroke;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .domain-structure-bridge {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      stroke-dasharray: 18 16;
+    }
+
+    .domain-hit-layer {
+      pointer-events: all;
+    }
+
+    .domain-hit-target {
+      pointer-events: all;
+      cursor: pointer;
+    }
+
+    .domain-hit-circle {
+      fill: rgba(0, 0, 0, 0.001);
+      stroke: none;
+    }
+
+    .domain-hit-bridge {
+      fill: none;
+      stroke: rgba(0, 0, 0, 0.001);
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .scene.has-domain-hover .domain-region {
+      opacity: 0.52;
+    }
+
+    .scene.has-domain-hover .domain-region.is-active-domain {
+      opacity: 1;
+    }
+
+    .scene.lod-medium .mesh-edge,
+    .scene.lod-high .mesh-edge {
+      filter: none;
+    }
+
+    .scene.lod-medium .domain-structure-layer,
+    .scene.lod-high .domain-structure-layer {
+      display: none;
+    }
+
+    .scene.lod-medium .orbit,
+    .scene.lod-high .orbit {
+      display: none;
+    }
+
+    .scene.lod-medium .halo,
+    .scene.lod-high .halo {
+      animation: none;
+    }
+
+    .scene.lod-medium .membrane {
+      animation: breathe 6.8s infinite ease-in-out;
+    }
+
+    .scene.lod-medium .glow {
+      animation: glow 3.4s infinite ease-in-out;
+      filter: blur(3px);
+    }
+
+    .scene.lod-high .domain-glow-layer {
+      display: none;
+    }
+
+    .scene.lod-high .membrane {
+      animation: none;
+    }
+
+    .scene.lod-high .glow,
+    .scene.lod-high .cell:not(.health-critical):not(.health-degraded) .nucleus {
+      animation: none;
+    }
+
+    .scene.lod-high .glow {
+      opacity: 0.72;
+      filter: blur(2px);
+    }
+
+    .scene.lod-high .cell.lifecycle-scaling .sat {
+      display: none;
+    }
+
+    .edge-layer {
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .mesh-edge {
+      fill: none;
+      stroke: rgba(121, 237, 255, 0.16);
+      stroke-width: 0.44;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      opacity: 0.62;
+      transition: opacity 180ms ease, stroke 180ms ease, stroke-width 180ms ease, filter 180ms ease;
+      filter: drop-shadow(0 0 6px rgba(70, 217, 255, 0.08));
+    }
+
+    .mesh-edge.is-release {
+      stroke: rgba(121, 237, 255, 0.72);
+      stroke-dasharray: 8 10;
+      animation: stream 2.8s linear infinite;
+      filter: drop-shadow(0 0 8px rgba(121, 237, 255, 0.18));
+    }
+
+    .scene.has-active .mesh-edge.is-dimmed {
+      opacity: 0.12;
+    }
+
+    .mesh-edge.is-related {
+      stroke: rgba(121, 237, 255, 0.82);
+      stroke-width: 0.72;
+      opacity: 1;
+    }
+
+    .node-layer {
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .mesh-node {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      transform: translate(-50%, -50%);
+      width: var(--node-size, 112px);
+      aspect-ratio: 1;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      overflow: visible;
+      z-index: 3;
+      pointer-events: auto;
+      transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
+    }
+
+    .mesh-node:focus-visible {
+      outline: 2px solid rgba(121, 237, 255, 0.7);
+      outline-offset: 6px;
+      border-radius: 999px;
+    }
+
+    .scene.has-active .mesh-node.is-dimmed {
+      opacity: 0.28;
+      filter: saturate(0.6);
+    }
+
+    .mesh-node.is-hovered,
+    .mesh-node.is-focused,
+    .mesh-node.is-release {
+      z-index: 5;
+    }
+
+    .cell {
+      --intensity: .28;
+      --accent: var(--teal);
+      --edge: rgba(70, 217, 255, 0.96);
+      --link: rgba(70, 217, 255, 0.24);
+      --membrane-edge: rgba(63, 243, 191, 0.72);
+      --glow: rgba(63, 243, 191, 0.44);
+      --pulse-scale: 1.14;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.48));
+      transition: transform 180ms ease, filter 180ms ease;
+    }
+
+    .mesh-node.is-hovered .cell,
+    .mesh-node.is-focused .cell {
+      transform: scale(1.06);
+      filter: drop-shadow(0 22px 34px rgba(0, 0, 0, 0.56));
+    }
+
+    .cell::before,
+    .cell::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .cell::before {
+      inset: 50% 6%;
+      height: 1px;
+      transform: translateY(-50%);
+      background:
+        radial-gradient(circle at left center, var(--edge) 0 4px, transparent 5px),
+        radial-gradient(circle at right center, var(--edge) 0 4px, transparent 5px),
+        linear-gradient(90deg, transparent 0, var(--link) 16%, var(--link) 84%, transparent 100%);
+      box-shadow: 0 0 14px rgba(107, 220, 255, 0.14);
+    }
+
+    .cell::after {
+      inset: 6% 50%;
+      width: 1px;
+      transform: translateX(-50%);
+      background:
+        radial-gradient(circle at center top, var(--edge) 0 4px, transparent 5px),
+        radial-gradient(circle at center bottom, var(--edge) 0 4px, transparent 5px),
+        linear-gradient(180deg, transparent 0, var(--link) 16%, var(--link) 84%, transparent 100%);
+      box-shadow: 0 0 14px rgba(107, 220, 255, 0.14);
+    }
+
+    .halo,
+    .release-ring,
+    .release-dot,
+    .membrane,
+    .orbit,
+    .glow,
+    .nucleus,
+    .sat {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .halo {
+      width: 86%;
+      height: 86%;
+      border-radius: 50%;
+      border: 1px solid rgba(121, 237, 255, 0.16);
+      box-shadow: 0 0 22px rgba(121, 237, 255, 0.12), inset 0 0 16px rgba(63, 243, 191, 0.08);
+      opacity: 0;
+      transition: opacity 180ms ease, transform 180ms ease;
+      animation: haloPulse 2.6s infinite ease-in-out;
+    }
+
+    .mesh-node.is-hovered .halo,
+    .mesh-node.is-focused .halo,
+    .mesh-node.is-release .halo {
+      opacity: 0.72;
+    }
+
+    .membrane {
+      width: 64%;
+      height: 64%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.09), transparent 28%),
+        radial-gradient(circle at center, rgba(7, 16, 24, 0.98) 0 56%, rgba(10, 24, 36, 0.94) 74%, rgba(7, 16, 24, 0.84) 100%);
+      border: 1px solid var(--membrane-edge);
+      box-shadow: inset 0 0 24px rgba(63, 243, 191, 0.12), 0 0 28px rgba(63, 243, 191, 0.08);
+      animation: breathe 4.4s infinite ease-in-out, wobble 9.2s infinite ease-in-out;
+    }
+
+    .orbit {
+      width: 78%;
+      height: 78%;
+      border-radius: 50%;
+      border: 1px dashed rgba(121, 237, 255, 0.16);
+      opacity: 0.42;
+      animation: spinRing 14s linear infinite;
+    }
+
+    .glow {
+      width: 26%;
+      height: 26%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.78), rgba(63, 243, 191, 0.46) 32%, rgba(63, 243, 191, 0.04) 72%, transparent);
+      filter: blur(4px);
+      animation: glow 2.2s infinite ease-in-out;
+    }
+
+    .nucleus {
+      width: 16%;
+      height: 16%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.96), var(--accent) 38%, rgba(63, 243, 191, 0.18) 82%);
+      box-shadow: 0 0 14px var(--glow), 0 0 24px rgba(255, 255, 255, 0.10);
+      animation: beat 2.2s infinite ease-in-out;
+    }
+
+    .release-ring,
+    .release-dot,
+    .sat {
+      opacity: 0;
+    }
+
+    .release-ring {
+      width: 90%;
+      height: 90%;
+      border-radius: 50%;
+      border: 1px solid rgba(121, 237, 255, 0.24);
+    }
+
+    .release-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: radial-gradient(circle, white, var(--cyan) 62%, transparent 90%);
+      box-shadow: 0 0 16px rgba(121, 237, 255, 0.46);
+    }
+
+    .sat {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, white, rgba(63, 243, 191, 0.82) 46%, rgba(63, 243, 191, 0.12) 84%);
+      box-shadow: 0 0 16px rgba(63, 243, 191, 0.24);
+    }
+
+    .cell.health-degraded {
+      --accent: var(--amber);
+      --membrane-edge: rgba(255, 177, 74, 0.74);
+      --glow: rgba(255, 177, 74, 0.34);
+    }
+
+    .cell.health-degraded .nucleus,
+    .cell.health-degraded .glow {
+      animation: none;
+    }
+
+    .cell.health-critical {
+      --accent: var(--coral);
+      --membrane-edge: rgba(255, 79, 79, 0.86);
+      --glow: rgba(255, 79, 79, 0.44);
+    }
+
+    .cell.health-critical .membrane,
+    .cell.health-critical .nucleus,
+    .cell.health-critical .glow {
+      animation: flicker 3.2s infinite linear;
+    }
+
+    .cell.is-release .release-ring { animation: spinRing 1.7s linear infinite; }
+    .cell.is-release .release-dot { animation: releaseDot 1.7s linear infinite; }
+    .cell.is-release .nucleus { animation: deployBeat 1.2s infinite ease-in-out; }
+    .cell.is-release .glow { animation: deployGlow 1.2s infinite ease-in-out; }
+
+    .cell.lifecycle-scaling .sat {
+      opacity: 1;
+      animation: bloom 2.2s infinite ease-in-out, floaty 3.2s infinite ease-in-out;
+    }
+
+    .cell:not(.lifecycle-scaling) .sat { display: none; }
+
+    .s1 { --a: 18deg; }
+    .s2 { --a: 142deg; }
+    .s3 { --a: 278deg; }
+
+    .node-label {
+      position: absolute;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 96px;
+      padding: 7px 10px;
+      border-radius: 14px;
+      color: #eef8fc;
+      background: rgba(7, 17, 26, 0.78);
+      border: 1px solid color-mix(in srgb, var(--domain-color, rgba(214, 232, 242, 0.12)) 20%, rgba(214, 232, 242, 0.12));
+      box-shadow: 0 14px 24px rgba(0, 0, 0, 0.30), inset 0 0 0 1px color-mix(in srgb, var(--domain-color, rgba(121, 237, 255, 0.05)) 8%, transparent);
+      font-size: 0.76rem;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      backdrop-filter: blur(12px);
+      transition: opacity 180ms ease, transform 180ms ease, border-color 180ms ease, background 180ms ease;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .node-label-text {
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      white-space: nowrap;
+    }
+
+    .node-label-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(232, 244, 248, 0.96);
+      box-shadow: 0 0 12px rgba(232, 244, 248, 0.18);
+      color: rgba(232, 244, 248, 0.96);
+      flex: 0 0 auto;
+    }
+
+    .mesh-node.health-degraded .node-label-dot {
+      background: var(--amber);
+      color: var(--amber);
+      box-shadow: 0 0 12px rgba(255, 177, 74, 0.28);
+    }
+
+    .mesh-node.health-critical .node-label-dot {
+      background: var(--coral);
+      color: var(--coral);
+      box-shadow: 0 0 12px rgba(255, 79, 79, 0.30);
+    }
+
+    .mesh-node.label-below .node-label {
+      left: 50%;
+      top: calc(100% + 10px);
+      transform: translateX(-50%);
+    }
+
+    .mesh-node.label-above .node-label {
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%);
+    }
+
+    .mesh-node.label-left .node-label {
+      right: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .mesh-node.label-right .node-label {
+      left: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .scene.has-active .mesh-node.is-dimmed .node-label {
+      opacity: 0;
+    }
+
+    .mesh-node.show-label .node-label,
+    .mesh-node.is-hovered .node-label,
+    .mesh-node.is-focused .node-label {
+      opacity: 1;
+      filter: saturate(1.08);
+    }
+
+    .hover-card,
+    .focus-panel {
+      position: absolute;
+      background: rgba(8, 17, 26, 0.92);
+      border: 1px solid rgba(121, 237, 255, 0.14);
+      box-shadow: 0 24px 46px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(16px);
+      z-index: 6;
+    }
+
+    .hover-card {
+      left: var(--hover-left, 64%);
+      top: var(--hover-top, 14%);
+      width: 244px;
+      padding: 16px;
+      border-radius: 20px;
+      display: grid;
+      gap: 10px;
+      opacity: 0;
+      transform: translate(0, 8px) scale(0.97);
+      transition: opacity 150ms ease, transform 150ms ease;
+      pointer-events: none;
+    }
+
+    .hover-card.align-left { transform: translate(-100%, 8px) scale(0.97); }
+
+    .scene.has-hover .hover-card {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .scene.has-hover .hover-card.align-right { transform: translate(0, 0) scale(1); }
+    .scene.has-hover .hover-card.align-left { transform: translate(-100%, 0) scale(1); }
+    .scene.has-focus .hover-card { opacity: 0; pointer-events: none; }
+
+    .hover-title { display: grid; gap: 4px; }
+
+    .service-name {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .service-subtitle {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .state-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .state-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.77rem;
+      border: 1px solid rgba(121, 237, 255, 0.12);
+      color: #d7ecf4;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .state-chip.healthy {
+      border-color: rgba(63, 243, 191, 0.26);
+      background: rgba(63, 243, 191, 0.08);
+    }
+
+    .state-chip.degraded {
+      border-color: rgba(255, 177, 74, 0.32);
+      background: rgba(255, 177, 74, 0.10);
+    }
+
+    .state-chip.critical {
+      border-color: rgba(255, 79, 79, 0.34);
+      background: rgba(255, 79, 79, 0.10);
+    }
+
+    .state-chip.lifecycle.release {
+      border-color: rgba(121, 237, 255, 0.34);
+      background: rgba(121, 237, 255, 0.10);
+    }
+
+    .state-chip.lifecycle.scaling {
+      border-color: rgba(63, 243, 191, 0.30);
+      background: rgba(63, 243, 191, 0.08);
+    }
+
+    .state-chip.domain-chip {
+      border-color: color-mix(in srgb, var(--domain-color, rgba(121, 237, 255, 0.22)) 40%, rgba(121, 237, 255, 0.12));
+      background: color-mix(in srgb, var(--domain-color, rgba(121, 237, 255, 0.10)) 10%, rgba(255, 255, 255, 0.03));
+    }
+
+    .hover-metrics,
+    .focus-metrics {
+      display: grid;
+      gap: 8px;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .metric-row strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .mono {
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+    }
+
+    .hover-footer {
+      padding-top: 2px;
+      border-top: 1px solid rgba(121, 237, 255, 0.08);
+    }
+
+    .hover-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      text-decoration: none;
+      color: #effffd;
+      padding-top: 10px;
+      font-size: 0.9rem;
+    }
+
+    .focus-panel {
+      right: 20px;
+      bottom: 20px;
+      width: 320px;
+      padding: 16px;
+      border-radius: 22px;
+      display: grid;
+      gap: 12px;
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+      transition: opacity 180ms ease, transform 180ms ease;
+      pointer-events: none;
+    }
+
+    .scene.has-focus .focus-panel {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .focus-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .focus-header h3 {
+      font-size: 1.12rem;
+      letter-spacing: -0.02em;
+    }
+
+    .focus-header p {
+      font-size: 0.86rem;
+      line-height: 1.45;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .focus-section-title {
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .focus-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .action-link,
+    .action-button,
+    .panel-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      border-radius: 16px;
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .panel-close {
+      width: 40px;
+      min-height: 40px;
+      padding: 0;
+      border: 1px solid rgba(121, 237, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .action-link {
+      width: 100%;
+      border: 1px solid rgba(121, 237, 255, 0.34);
+      background: linear-gradient(180deg, rgba(121, 237, 255, 0.26), rgba(63, 243, 191, 0.12));
+      color: #f0fffd;
+    }
+
+    .action-button {
+      width: 100%;
+      border: 1px solid rgba(121, 237, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    @keyframes breathe { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.03); } }
+    @keyframes beat { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(var(--pulse-scale)); } }
+    @keyframes deployBeat { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 35% { transform: translate(-50%, -50%) scale(1.22); } 56% { transform: translate(-50%, -50%) scale(1.10); } }
+    @keyframes deployGlow { 0%, 100% { transform: translate(-50%, -50%) scale(.92); opacity: .68; } 35% { transform: translate(-50%, -50%) scale(1.10); opacity: 1; } 56% { transform: translate(-50%, -50%) scale(1.02); opacity: .88; } }
+    @keyframes glow { 0%, 100% { transform: translate(-50%, -50%) scale(.92); opacity: .74; } 50% { transform: translate(-50%, -50%) scale(1.06); opacity: 1; } }
+    @keyframes haloPulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: .72; } 50% { transform: translate(-50%, -50%) scale(1.03); opacity: 1; } }
+    @keyframes spinRing { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+    @keyframes bloom { 0%, 100% { transform: translate(-50%, -50%) rotate(var(--a)) translateX(38px) scale(.74); } 50% { transform: translate(-50%, -50%) rotate(var(--a)) translateX(47px) scale(1.04); } }
+    @keyframes floaty { 0%, 100% { margin-top: 0; } 50% { margin-top: -3px; } }
+    @keyframes releaseDot { from { transform: translate(-50%, -50%) rotate(0deg) translateX(53px); } to { transform: translate(-50%, -50%) rotate(360deg) translateX(53px); } }
+    @keyframes wobble { 0%, 100% { border-radius: 50%; } 35% { border-radius: 48% 52% 51% 49% / 47% 53% 47% 53%; } 65% { border-radius: 51% 49% 48% 52% / 52% 48% 54% 46%; } }
+    @keyframes flicker { 0%, 100% { opacity: 1; } 8% { opacity: .72; } 10% { opacity: .98; } 44% { opacity: .82; } 48% { opacity: 1; } 80% { opacity: .74; } }
+    @keyframes stream { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -36; } }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100vw - 18px, 100%);
+        padding-top: 18px;
+      }
+
+      .proto-card { padding: 14px; }
+      .scene { min-height: 860px; }
+      .toolbar { padding: 14px; }
+      .mesh-node { width: 100px; }
+      .scene-note { max-width: calc(100% - 24px); }
+      .release-banner { right: 12px; top: 52px; }
+
+      .hover-card {
+        left: 16px;
+        right: 16px;
+        top: 16px;
+        width: auto;
+      }
+
+      .hover-card.align-left,
+      .scene.has-hover .hover-card.align-left,
+      .scene.has-hover .hover-card.align-right {
+        transform: translate(0, 0) scale(1);
+      }
+
+      .mesh-node.label-left .node-label,
+      .mesh-node.label-right .node-label {
+        left: 50%;
+        right: auto;
+        top: calc(100% + 10px);
+        bottom: auto;
+        transform: translateX(-50%);
+      }
+
+      .focus-panel {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        top: auto;
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="headline">
+      <span class="eyebrow">Visual Exploration / Dynamicity Testing</span>
+      <h1>Core gravity under live mutation.</h1>
+      <p>This page builds on the previous core-gravity constellation but turns the graph into a dynamic test harness. Use it to add random services and entirely new domains and verify that layout, hulls, links, and hover behavior continue adapting cleanly.</p>
+    </section>
+
+    <section class="legend-wrap" aria-label="Legends">
+      <div class="legend" id="runtime-legend"></div>
+      <div class="legend">
+        <div class="legend-item"><span class="swatch healthy"></span> healthy</div>
+        <div class="legend-item"><span class="swatch degraded"></span> degraded</div>
+        <div class="legend-item"><span class="swatch critical"></span> critical</div>
+        <div class="legend-item"><span class="swatch release"></span> release wave</div>
+        <div class="legend-item"><span class="swatch scaling"></span> scaling</div>
+      </div>
+    </section>
+
+    <section class="gallery">
+      <article class="proto-card" id="dynamic-test">
+        <div class="proto-copy">
+          <h2>Core Gravity Dynamic Test</h2>
+          <p>New services and domains are generated live. The graph recomputes placement, region hulls, label disclosure, and link routing on every mutation.</p>
+        </div>
+
+        <section class="toolbar" aria-label="Dynamic test controls">
+          <div class="toolbar-row">
+            <div class="toolbar-actions">
+              <button class="control-button primary" id="add-service" type="button">Add random service</button>
+              <button class="control-button primary" id="add-domain" type="button">Add random domain</button>
+              <button class="control-button" id="burst-services" type="button">Burst +5 services</button>
+              <button class="control-button" id="reset-graph" type="button">Reset graph</button>
+            </div>
+          </div>
+          <div class="toolbar-row toolbar-split">
+            <div class="toolbar-meta">
+              <span class="stat-pill">domains <strong id="domain-count" class="mono">0</strong></span>
+              <span class="stat-pill">services <strong id="service-count" class="mono">0</strong></span>
+              <span class="stat-pill">links <strong id="link-count" class="mono">0</strong></span>
+            </div>
+            <div class="zoom-controls">
+              <button class="control-button" id="zoom-out" type="button">Zoom out</button>
+              <span class="stat-pill zoom-readout">zoom <strong id="zoom-readout" class="mono">100%</strong></span>
+              <button class="control-button" id="zoom-in" type="button">Zoom in</button>
+              <button class="control-button" id="zoom-fit" type="button">Fit view</button>
+            </div>
+          </div>
+          <div class="status-line" id="status-line">Seed graph loaded.</div>
+        </section>
+
+        <div class="scene" id="scene" data-scene="core-gravity">
+          <svg class="domain-layer" aria-hidden="true"></svg>
+          <div class="scene-note">Use the controls above to add random services or whole new domains. This view is intentionally stress-oriented, not hand-tuned.</div>
+          <div class="domain-indicator" aria-hidden="true"><strong data-role="domain-name"></strong></div>
+          <div class="release-banner">world deploy active <strong>v2.4.0</strong></div>
+          <svg class="edge-layer" aria-hidden="true"></svg>
+          <div class="node-layer"></div>
+          <div class="hover-card align-right" aria-hidden="true">
+            <div class="hover-title">
+              <div class="service-name" data-role="hover-name"></div>
+              <div class="service-subtitle" data-role="hover-release"></div>
+            </div>
+            <div class="state-chip-row">
+              <span class="state-chip domain-chip" data-role="hover-domain"></span>
+              <span class="state-chip" data-role="hover-health"></span>
+              <span class="state-chip lifecycle" data-role="hover-mode"></span>
+            </div>
+            <div class="hover-metrics">
+              <div class="metric-row"><span>Latency</span><strong class="mono" data-role="hover-latency"></strong></div>
+              <div class="metric-row"><span>Error</span><strong class="mono" data-role="hover-error"></strong></div>
+            </div>
+            <div class="hover-footer"><a class="hover-link" href="https://google.com" target="_blank" rel="noreferrer"><span>View Service</span><span aria-hidden="true">-></span></a></div>
+          </div>
+          <aside class="focus-panel" aria-hidden="true">
+            <div class="focus-header">
+              <div>
+                <h3 data-role="focus-name"></h3>
+                <p data-role="focus-release"></p>
+              </div>
+              <button class="panel-close" type="button" aria-label="Close service panel">x</button>
+            </div>
+            <div class="state-chip-row">
+              <span class="state-chip domain-chip" data-role="focus-domain"></span>
+              <span class="state-chip" data-role="focus-health"></span>
+              <span class="state-chip lifecycle" data-role="focus-mode"></span>
+            </div>
+            <div class="focus-body">
+              <div class="focus-section-title">Current snapshot</div>
+              <div class="focus-metrics">
+                <div class="metric-row"><span>Replicas</span><strong class="mono" data-role="focus-replicas"></strong></div>
+                <div class="metric-row"><span>Traffic</span><strong class="mono" data-role="focus-traffic"></strong></div>
+                <div class="metric-row"><span>Latency p95</span><strong class="mono" data-role="focus-latency"></strong></div>
+                <div class="metric-row"><span>Error rate</span><strong class="mono" data-role="focus-error"></strong></div>
+                <div class="metric-row"><span>CPU</span><strong class="mono" data-role="focus-cpu"></strong></div>
+                <div class="metric-row"><span>Memory</span><strong class="mono" data-role="focus-memory"></strong></div>
+                <div class="metric-row"><span>Deploy</span><strong class="mono" data-role="focus-deploy"></strong></div>
+              </div>
+            </div>
+            <div class="focus-actions">
+              <a class="action-link" href="https://google.com" target="_blank" rel="noreferrer">View Service</a>
+              <button class="action-button" type="button">Logs</button>
+              <button class="action-button" type="button">Traces</button>
+              <button class="action-button" type="button">Metrics</button>
+            </div>
+          </aside>
+        </div>
+      </article>
+    </section>
+  </main>
+  <script>
+    const BASE_DOMAIN_META = {
+      frontend: { label: "Frontend", color: "#79edff", origin: "seed" },
+      auth: { label: "Auth", color: "#ffd166", origin: "seed" },
+      core: { label: "Core", color: "#5cf6c1", origin: "seed" },
+      processors: { label: "Processors", color: "#9aa7ff", origin: "seed" },
+      data: { label: "Data", color: "#ff93bc", origin: "seed" }
+    };
+
+    const BASE_DOMAIN_ANCHORS = {
+      frontend: [18, 34],
+      auth: [34, 42],
+      core: [52, 48],
+      processors: [72, 74],
+      data: [78, 24]
+    };
+
+    const BASE_LAYOUT = {
+      "web-frontend": [14, 34],
+      "edge-gateway": [22, 22],
+      "ops-console": [16, 58],
+      "session-auth": [34, 34],
+      "token-service": [46, 46],
+      "policy-engine": [28, 70],
+      "api-core": [50, 22],
+      "workflow-core": [60, 48],
+      "ledger-core": [46, 72],
+      "notify-core": [62, 66],
+      "event-processor": [84, 42],
+      "job-runner": [68, 88],
+      "scheduler": [56, 86],
+      "profile-store": [82, 22],
+      "event-store": [76, 58],
+      "warehouse": [82, 82]
+    };
+
+    const SEED_SERVICES = [
+      { id: "web-frontend", label: "web-frontend", domain: "frontend", health: "healthy", lifecycle: "idle", release: "v2.4.0", latency: "22 ms", errorRate: "0.2%", replicas: "6", traffic: "180 rps", cpu: "42%", memory: "512 MiB", deploy: "stable" },
+      { id: "edge-gateway", label: "edge-gateway", domain: "frontend", health: "healthy", lifecycle: "idle", release: "v2.4.0", latency: "18 ms", errorRate: "0.1%", replicas: "8", traffic: "244 rps", cpu: "46%", memory: "588 MiB", deploy: "world deploy active" },
+      { id: "ops-console", label: "ops-console", domain: "frontend", health: "healthy", lifecycle: "idle", release: "v2.3.7", latency: "30 ms", errorRate: "0.2%", replicas: "3", traffic: "46 rps", cpu: "24%", memory: "328 MiB", deploy: "stable" },
+      { id: "session-auth", label: "session-auth", domain: "auth", health: "healthy", lifecycle: "idle", release: "v2.4.0", latency: "24 ms", errorRate: "0.1%", replicas: "5", traffic: "162 rps", cpu: "39%", memory: "436 MiB", deploy: "world deploy active" },
+      { id: "token-service", label: "token-service", domain: "auth", health: "healthy", lifecycle: "idle", release: "v2.3.6", latency: "28 ms", errorRate: "0.1%", replicas: "4", traffic: "118 rps", cpu: "31%", memory: "402 MiB", deploy: "stable" },
+      { id: "policy-engine", label: "policy-engine", domain: "auth", health: "degraded", lifecycle: "idle", release: "v2.3.4", latency: "96 ms", errorRate: "2.9%", replicas: "4", traffic: "94 rps", cpu: "74%", memory: "618 MiB", deploy: "stable" },
+      { id: "api-core", label: "api-core", domain: "core", health: "healthy", lifecycle: "idle", release: "v2.4.0", latency: "20 ms", errorRate: "0.1%", replicas: "7", traffic: "216 rps", cpu: "48%", memory: "552 MiB", deploy: "world deploy active" },
+      { id: "workflow-core", label: "workflow-core", domain: "core", health: "healthy", lifecycle: "idle", release: "v2.4.0", latency: "26 ms", errorRate: "0.2%", replicas: "6", traffic: "172 rps", cpu: "44%", memory: "506 MiB", deploy: "world deploy active" },
+      { id: "ledger-core", label: "ledger-core", domain: "core", health: "healthy", lifecycle: "idle", release: "v2.3.8", latency: "24 ms", errorRate: "0.2%", replicas: "5", traffic: "122 rps", cpu: "37%", memory: "480 MiB", deploy: "stable" },
+      { id: "notify-core", label: "notify-core", domain: "core", health: "critical", lifecycle: "idle", release: "v2.3.5", latency: "280 ms", errorRate: "14.8%", replicas: "2", traffic: "58 rps", cpu: "93%", memory: "792 MiB", deploy: "stable" },
+      { id: "event-processor", label: "event-processor", domain: "processors", health: "healthy", lifecycle: "idle", release: "v2.4.0", latency: "34 ms", errorRate: "0.3%", replicas: "5", traffic: "154 rps", cpu: "51%", memory: "566 MiB", deploy: "world deploy active" },
+      { id: "job-runner", label: "job-runner", domain: "processors", health: "healthy", lifecycle: "scaling", release: "v2.3.2", latency: "40 ms", errorRate: "0.4%", replicas: "6 -> 9", traffic: "110 rps", cpu: "67%", memory: "640 MiB", deploy: "autoscaling" },
+      { id: "scheduler", label: "scheduler", domain: "processors", health: "healthy", lifecycle: "idle", release: "v2.3.1", latency: "28 ms", errorRate: "0.2%", replicas: "4", traffic: "82 rps", cpu: "33%", memory: "412 MiB", deploy: "stable" },
+      { id: "profile-store", label: "profile-store", domain: "data", health: "healthy", lifecycle: "idle", release: "v2.3.0", latency: "18 ms", errorRate: "0.1%", replicas: "3", traffic: "92 rps", cpu: "28%", memory: "608 MiB", deploy: "stable" },
+      { id: "event-store", label: "event-store", domain: "data", health: "healthy", lifecycle: "idle", release: "v2.4.0", latency: "22 ms", errorRate: "0.1%", replicas: "4", traffic: "144 rps", cpu: "36%", memory: "684 MiB", deploy: "world deploy verify" },
+      { id: "warehouse", label: "warehouse", domain: "data", health: "healthy", lifecycle: "idle", release: "v2.3.3", latency: "26 ms", errorRate: "0.1%", replicas: "3", traffic: "74 rps", cpu: "29%", memory: "736 MiB", deploy: "stable" }
+    ];
+
+    const SEED_LINKS = [
+      ["web-frontend", "edge-gateway"],
+      ["ops-console", "edge-gateway"],
+      ["ops-console", "policy-engine"],
+      ["edge-gateway", "session-auth"],
+      ["edge-gateway", "api-core"],
+      ["session-auth", "token-service"],
+      ["session-auth", "api-core"],
+      ["token-service", "policy-engine"],
+      ["policy-engine", "api-core"],
+      ["api-core", "workflow-core"],
+      ["api-core", "ledger-core"],
+      ["api-core", "profile-store"],
+      ["workflow-core", "notify-core"],
+      ["workflow-core", "event-processor"],
+      ["workflow-core", "scheduler"],
+      ["ledger-core", "job-runner"],
+      ["ledger-core", "event-store"],
+      ["notify-core", "job-runner"],
+      ["event-processor", "event-store"],
+      ["event-processor", "warehouse"],
+      ["scheduler", "job-runner"],
+      ["scheduler", "warehouse"]
+    ];
+
+    const SEED_RELEASE_WAVE_NODES = ["edge-gateway", "session-auth", "api-core", "workflow-core", "event-processor", "event-store"];
+    const SEED_RELEASE_WAVE_EDGES = [
+      "edge-gateway|session-auth",
+      "session-auth|api-core",
+      "api-core|workflow-core",
+      "workflow-core|event-processor",
+      "event-processor|event-store"
+    ];
+
+    const DOMAIN_WORDS = [
+      "observability", "search", "compliance", "routing", "trust", "insights",
+      "identity", "payments", "recommendations", "quality", "safety", "experiments"
+    ];
+
+    const SERVICE_PREFIXES = [
+      "event", "stream", "audit", "vector", "cache", "policy", "batch", "merge",
+      "signal", "query", "adapter", "index", "gateway", "session", "ingest", "relay"
+    ];
+
+    const SERVICE_SUFFIXES = [
+      "service", "engine", "worker", "router", "store", "bridge", "sync", "planner",
+      "runner", "cache", "relay", "index"
+    ];
+
+    const CORE_BRIDGE_TARGETS = ["api-core", "workflow-core", "ledger-core", "event-processor"];
+
+    function deepClone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function percentToPx(point, width, height) {
+      return { x: width * (point[0] / 100), y: height * (point[1] / 100) };
+    }
+
+    function pxToPercent(point, width, height) {
+      return { x: (point.x / width) * 100, y: (point.y / height) * 100 };
+    }
+
+    function edgeKey(a, b) {
+      return [a, b].sort().join("|");
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomFrom(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function weightedPick(table) {
+      const total = table.reduce((sum, item) => sum + item.weight, 0);
+      let cursor = Math.random() * total;
+      for (const item of table) {
+        cursor -= item.weight;
+        if (cursor <= 0) return item.value;
+      }
+      return table[table.length - 1].value;
+    }
+
+    function toTitleCase(text) {
+      return text
+        .split("-")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+    }
+
+    function angleDiff(a, b) {
+      const diff = Math.abs(a - b) % (Math.PI * 2);
+      return diff > Math.PI ? (Math.PI * 2) - diff : diff;
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function uniqueId(base, existing) {
+      let candidate = base;
+      let suffix = 2;
+      while (existing.has(candidate)) {
+        candidate = `${base}-${suffix}`;
+        suffix += 1;
+      }
+      return candidate;
+    }
+
+    function createSeedState() {
+      return {
+        domainMeta: deepClone(BASE_DOMAIN_META),
+        services: deepClone(SEED_SERVICES),
+        links: deepClone(SEED_LINKS),
+        releaseWaveNodes: new Set(SEED_RELEASE_WAVE_NODES),
+        releaseWaveEdges: new Set(SEED_RELEASE_WAVE_EDGES),
+        status: "Seed graph loaded.",
+        domainSeq: 1
+      };
+    }
+
+    class DynamicConstellationApp {
+      constructor(root) {
+        this.root = root;
+        this.scene = root.querySelector("#scene");
+        this.domainLayer = root.querySelector(".domain-layer");
+        this.edgeLayer = root.querySelector(".edge-layer");
+        this.nodeLayer = root.querySelector(".node-layer");
+        this.hoverCard = root.querySelector(".hover-card");
+        this.focusPanel = root.querySelector(".focus-panel");
+        this.closeButton = root.querySelector(".panel-close");
+        this.domainIndicator = root.querySelector(".domain-indicator");
+        this.runtimeLegend = document.getElementById("runtime-legend");
+        this.statusLine = root.querySelector("#status-line");
+        this.domainCount = root.querySelector("#domain-count");
+        this.serviceCount = root.querySelector("#service-count");
+        this.linkCount = root.querySelector("#link-count");
+        this.zoomReadout = root.querySelector("#zoom-readout");
+        this.hoveredId = null;
+        this.hoveredDomain = null;
+        this.focusedId = null;
+        this.hoverTimer = null;
+        this.userZoom = 1;
+        this.lod = "normal";
+        this.layout = { positionsPx: {}, positionsPercent: {}, labelPlacement: {}, domainAnchors: {}, nodeDisplaySizes: {}, cameraScale: 1 };
+        this.state = createSeedState();
+        this.rebuildDerivedState();
+        this.bindStaticEvents();
+        this.render();
+      }
+
+      bindStaticEvents() {
+        this.root.querySelector("#add-service").addEventListener("click", () => this.addRandomService());
+        this.root.querySelector("#add-domain").addEventListener("click", () => this.addRandomDomain());
+        this.root.querySelector("#burst-services").addEventListener("click", () => this.addServiceBurst());
+        this.root.querySelector("#reset-graph").addEventListener("click", () => this.resetGraph());
+        this.root.querySelector("#zoom-out").addEventListener("click", () => this.adjustZoom(-0.14));
+        this.root.querySelector("#zoom-in").addEventListener("click", () => this.adjustZoom(0.14));
+        this.root.querySelector("#zoom-fit").addEventListener("click", () => this.resetZoom());
+
+        this.hoverCard.addEventListener("mouseenter", () => clearTimeout(this.hoverTimer));
+        this.hoverCard.addEventListener("mouseleave", (event) => {
+          if (!this.focusedId && !this.isHoverTarget(event.relatedTarget)) {
+            clearTimeout(this.hoverTimer);
+            this.hoverTimer = setTimeout(() => this.clearHover(), 120);
+          }
+        });
+
+        this.closeButton.addEventListener("click", () => this.clearInteraction());
+
+        document.addEventListener("click", (event) => {
+          const target = event.target;
+          const clickedInsideInteractive =
+            this.nodeLayer.contains(target) ||
+            this.hoverCard.contains(target) ||
+            this.focusPanel.contains(target) ||
+            target.closest(".toolbar");
+
+          if (!clickedInsideInteractive) {
+            this.clearInteraction();
+          }
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            this.clearInteraction();
+          }
+        });
+
+        window.addEventListener("resize", () => this.render());
+      }
+
+      rebuildDerivedState() {
+        this.serviceMap = new Map(this.state.services.map((service) => [service.id, service]));
+        this.adjacency = new Map(this.state.services.map((service) => [service.id, new Set()]));
+        this.state.links.forEach(([from, to]) => {
+          if (!this.adjacency.has(from)) this.adjacency.set(from, new Set());
+          if (!this.adjacency.has(to)) this.adjacency.set(to, new Set());
+          this.adjacency.get(from).add(to);
+          this.adjacency.get(to).add(from);
+        });
+      }
+
+      resetGraph() {
+        this.state = createSeedState();
+        this.userZoom = 1;
+        this.rebuildDerivedState();
+        this.clearInteraction(true);
+        this.render();
+      }
+
+      adjustZoom(delta) {
+        this.userZoom = clamp(this.userZoom + delta, 0.7, 2.4);
+        this.render();
+      }
+
+      resetZoom() {
+        this.userZoom = 1;
+        this.render();
+      }
+
+      currentDomains() {
+        return Object.keys(this.state.domainMeta);
+      }
+
+      addServiceBurst() {
+        for (let index = 0; index < 5; index += 1) {
+          this.addRandomService({ silent: true });
+        }
+        this.state.status = "Added burst: 5 random services.";
+        this.rebuildDerivedState();
+        this.clearInteraction(true);
+        this.render();
+      }
+
+      addRandomDomain() {
+        const existingNames = new Set(this.currentDomains());
+        const baseName = uniqueId(randomFrom(DOMAIN_WORDS), existingNames);
+        const domainId = baseName;
+        const domainLabel = toTitleCase(baseName);
+        const hue = (this.state.domainSeq * 137.5 + 28) % 360;
+        this.state.domainSeq += 1;
+
+        this.state.domainMeta[domainId] = {
+          label: domainLabel,
+          color: `hsl(${hue}deg 72% 68%)`,
+          origin: "generated"
+        };
+
+        const serviceTotal = randomInt(2, 4);
+        const bridgeTarget = randomFrom(CORE_BRIDGE_TARGETS);
+        for (let index = 0; index < serviceTotal; index += 1) {
+          this.addRandomService({
+            domainId,
+            silent: true,
+            forceBridgeTarget: index === 0 ? bridgeTarget : null,
+            preferLocal: index > 0
+          });
+        }
+
+        this.state.status = `Added domain: ${domainLabel} (${serviceTotal} services).`;
+        this.rebuildDerivedState();
+        this.clearInteraction(true);
+        this.render();
+      }
+
+      addRandomService(options = {}) {
+        const domains = options.domainId ? [options.domainId] : this.currentDomains();
+        const domainId = options.domainId || randomFrom(domains);
+        const domain = this.state.domainMeta[domainId];
+        const existingIds = new Set(this.state.services.map((service) => service.id));
+        const basePrefix = Math.random() < 0.38 ? domainId.split("-")[0] : randomFrom(SERVICE_PREFIXES);
+        const baseName = uniqueId(`${basePrefix}-${randomFrom(SERVICE_SUFFIXES)}`, existingIds);
+        const health = weightedPick([
+          { value: "healthy", weight: 72 },
+          { value: "degraded", weight: 20 },
+          { value: "critical", weight: 8 }
+        ]);
+        const lifecycle = weightedPick([
+          { value: "idle", weight: 78 },
+          { value: "scaling", weight: 22 }
+        ]);
+
+        const latencyBase = health === "critical" ? randomInt(180, 320) : health === "degraded" ? randomInt(64, 120) : randomInt(18, 42);
+        const errorBase = health === "critical" ? (Math.random() * 10 + 6).toFixed(1) : health === "degraded" ? (Math.random() * 3 + 1.2).toFixed(1) : (Math.random() * 0.7 + 0.1).toFixed(1);
+        const replicasBase = lifecycle === "scaling" ? `${randomInt(3, 7)} -> ${randomInt(8, 12)}` : String(randomInt(2, 8));
+        const release = `v2.${randomInt(3, 5)}.${randomInt(0, 9)}`;
+        const deploy = lifecycle === "scaling" ? "autoscaling" : "stable";
+
+        const service = {
+          id: baseName,
+          label: baseName,
+          domain: domainId,
+          health,
+          lifecycle,
+          release,
+          latency: `${latencyBase} ms`,
+          errorRate: `${errorBase}%`,
+          replicas: replicasBase,
+          traffic: `${randomInt(22, 260)} rps`,
+          cpu: `${randomInt(24, 88)}%`,
+          memory: `${randomInt(280, 920)} MiB`,
+          deploy
+        };
+
+        this.state.services.push(service);
+        this.attachRandomLinks(service.id, domainId, options);
+
+        if (!options.silent) {
+          this.state.status = `Added service: ${service.label} in ${domain.label}.`;
+          this.rebuildDerivedState();
+          this.clearInteraction(true);
+          this.render();
+        }
+      }
+
+      attachRandomLinks(serviceId, domainId, options = {}) {
+        const existingBefore = this.state.services.filter((service) => service.id !== serviceId);
+        const localCandidates = existingBefore.filter((service) => service.domain === domainId).map((service) => service.id);
+        const crossCandidates = existingBefore.filter((service) => service.domain !== domainId).map((service) => service.id);
+        const desiredLocal = options.preferLocal ? clamp(randomInt(1, 3), 1, localCandidates.length || 1) : clamp(randomInt(1, 2), 1, localCandidates.length || 1);
+        const chosen = new Set();
+
+        while (localCandidates.length && chosen.size < desiredLocal) {
+          const pick = randomFrom(localCandidates);
+          chosen.add(pick);
+          localCandidates.splice(localCandidates.indexOf(pick), 1);
+        }
+
+        if (options.forceBridgeTarget) {
+          chosen.add(options.forceBridgeTarget);
+        } else if (crossCandidates.length && Math.random() < 0.35) {
+          chosen.add(randomFrom(crossCandidates));
+        }
+
+        if (!chosen.size && crossCandidates.length) {
+          chosen.add(randomFrom(crossCandidates));
+        }
+
+        chosen.forEach((targetId) => {
+          const key = edgeKey(serviceId, targetId);
+          const exists = this.state.links.some(([from, to]) => edgeKey(from, to) === key);
+          if (!exists) {
+            this.state.links.push([serviceId, targetId]);
+          }
+        });
+      }
+
+      nodeSize(serviceId) {
+        const service = this.serviceMap.get(serviceId);
+        if (service.domain === "core") return 116;
+        return 108;
+      }
+
+      intensity(service) {
+        if (service.health === "critical") return ".58";
+        if (this.state.releaseWaveNodes.has(service.id)) return ".88";
+        if (service.lifecycle === "scaling") return ".72";
+        if (service.health === "degraded") return ".36";
+        return ".24";
+      }
+
+      healthLabel(health) {
+        return health === "healthy" ? "Healthy" : health === "degraded" ? "Degraded" : "Critical";
+      }
+
+      chipClass(health) {
+        return health === "healthy" ? "healthy" : health === "degraded" ? "degraded" : "critical";
+      }
+
+      serviceMode(service) {
+        if (service.lifecycle === "scaling") return { label: "Scaling", className: "state-chip lifecycle scaling" };
+        if (this.state.releaseWaveNodes.has(service.id)) return { label: "Release Wave", className: "state-chip lifecycle release" };
+        return { label: "Stable", className: "state-chip lifecycle stable" };
+      }
+
+      domainRadius(domainId, nodeSize) {
+        const coreBonus = domainId === "core" ? 14 : 0;
+        return nodeSize * 0.31 + 22 + coreBonus;
+      }
+
+      computeLayout() {
+        const width = this.scene.clientWidth || 1200;
+        const height = this.scene.clientHeight || 760;
+        const serviceScale = Math.max(1, Math.sqrt(this.state.services.length / SEED_SERVICES.length));
+        const domainScale = Math.max(1, Math.sqrt(this.currentDomains().length / Object.keys(BASE_DOMAIN_META).length));
+        const worldScale = clamp(Math.max(serviceScale, domainScale * 1.06), 1, 3.4);
+        const worldWidth = width * worldScale;
+        const worldHeight = height * Math.max(1, worldScale * 0.94);
+        const center = { x: worldWidth * 0.5, y: worldHeight * 0.5 };
+        const domainAnchors = {};
+        const existingAngles = [];
+
+        Object.entries(BASE_DOMAIN_ANCHORS).forEach(([domainId, anchor]) => {
+          if (!this.state.domainMeta[domainId]) return;
+          const point = percentToPx(anchor, worldWidth, worldHeight);
+          domainAnchors[domainId] = point;
+          existingAngles.push(Math.atan2(point.y - center.y, point.x - center.x));
+        });
+
+        const dynamicDomains = this.currentDomains().filter((domainId) => !BASE_DOMAIN_ANCHORS[domainId]);
+        dynamicDomains.forEach((domainId, index) => {
+          let angle = ((index * 137.5 + 20) % 360) * (Math.PI / 180);
+          let attempts = 0;
+          while (existingAngles.some((value) => angleDiff(value, angle) < 0.46) && attempts < 28) {
+            angle += 0.34;
+            attempts += 1;
+          }
+          existingAngles.push(angle);
+          domainAnchors[domainId] = {
+            x: center.x + Math.cos(angle) * worldWidth * 0.34,
+            y: center.y + Math.sin(angle) * worldHeight * 0.30
+          };
+        });
+
+        const positionsPx = {};
+        const targets = {};
+        const servicesByDomain = new Map(this.currentDomains().map((domainId) => [domainId, []]));
+        this.state.services.forEach((service) => {
+          if (!servicesByDomain.has(service.domain)) servicesByDomain.set(service.domain, []);
+          servicesByDomain.get(service.domain).push(service);
+        });
+
+        servicesByDomain.forEach((services, domainId) => {
+          const anchor = domainAnchors[domainId];
+          let dynamicIndex = 0;
+          services.forEach((service) => {
+            if (BASE_LAYOUT[service.id]) {
+              const point = percentToPx(BASE_LAYOUT[service.id], worldWidth, worldHeight);
+              positionsPx[service.id] = { x: point.x, y: point.y };
+              targets[service.id] = { x: point.x, y: point.y };
+              return;
+            }
+
+            const angle = (((dynamicIndex * 137.5) + (domainId.length * 21)) % 360) * (Math.PI / 180);
+            const radius = 54 + Math.sqrt(dynamicIndex + 1) * 34;
+            const stretchX = domainId === "core" ? 1.12 : 0.96;
+            const stretchY = domainId === "core" ? 0.88 : 0.94;
+            const point = {
+              x: anchor.x + Math.cos(angle) * radius * stretchX,
+              y: anchor.y + Math.sin(angle) * radius * stretchY
+            };
+            positionsPx[service.id] = { x: point.x, y: point.y };
+            targets[service.id] = { x: point.x, y: point.y };
+            dynamicIndex += 1;
+          });
+        });
+
+        const ids = this.state.services.map((service) => service.id);
+        for (let pass = 0; pass < 80; pass += 1) {
+          for (let left = 0; left < ids.length; left += 1) {
+            for (let right = left + 1; right < ids.length; right += 1) {
+              const aId = ids[left];
+              const bId = ids[right];
+              const a = positionsPx[aId];
+              const b = positionsPx[bId];
+              const sameDomain = this.serviceMap.get(aId).domain === this.serviceMap.get(bId).domain;
+              const minDist = sameDomain ? 98 : 88;
+              const dx = b.x - a.x;
+              const dy = b.y - a.y;
+              const distance = Math.max(Math.hypot(dx, dy), 0.01);
+              if (distance >= minDist) continue;
+              const push = (minDist - distance) * 0.5;
+              const ux = dx / distance;
+              const uy = dy / distance;
+              a.x -= ux * push;
+              a.y -= uy * push;
+              b.x += ux * push;
+              b.y += uy * push;
+            }
+          }
+
+          ids.forEach((id) => {
+            const service = this.serviceMap.get(id);
+            const anchor = domainAnchors[service.domain];
+            const target = targets[id];
+            const point = positionsPx[id];
+            point.x += (target.x - point.x) * 0.08 + (anchor.x - point.x) * 0.012;
+            point.y += (target.y - point.y) * 0.08 + (anchor.y - point.y) * 0.012;
+            point.x = clamp(point.x, 88, worldWidth - 88);
+            point.y = clamp(point.y, 94, worldHeight - 78);
+          });
+        }
+
+        const bounds = this.computeWorldBounds(positionsPx);
+        const fitScale = Math.min((width - 140) / bounds.w, (height - 150) / bounds.h, 1);
+        const cameraScale = fitScale * this.userZoom;
+        const boundsCenter = { x: bounds.x + bounds.w / 2, y: bounds.y + bounds.h / 2 };
+        const screenPositions = {};
+        const positionsPercent = {};
+        const nodeDisplaySizes = {};
+        const screenDomainAnchors = {};
+
+        Object.entries(positionsPx).forEach(([id, point]) => {
+          const screenPoint = {
+            x: (point.x - boundsCenter.x) * cameraScale + width / 2,
+            y: (point.y - boundsCenter.y) * cameraScale + height / 2
+          };
+          screenPositions[id] = screenPoint;
+          positionsPercent[id] = pxToPercent(screenPoint, width, height);
+          nodeDisplaySizes[id] = this.nodeSize(id) * cameraScale;
+        });
+
+        Object.entries(domainAnchors).forEach(([domainId, point]) => {
+          screenDomainAnchors[domainId] = {
+            x: (point.x - boundsCenter.x) * cameraScale + width / 2,
+            y: (point.y - boundsCenter.y) * cameraScale + height / 2
+          };
+        });
+
+        const labelPlacement = {};
+        this.state.services.forEach((service) => {
+          labelPlacement[service.id] = this.chooseLabelPlacement(service, screenPositions, nodeDisplaySizes, screenDomainAnchors, width, height);
+        });
+
+        return { width, height, worldWidth, worldHeight, positionsPx: screenPositions, positionsPercent, labelPlacement, domainAnchors: screenDomainAnchors, nodeDisplaySizes, cameraScale };
+      }
+
+      computeWorldBounds(positionsPx) {
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        Object.entries(positionsPx).forEach(([id, point]) => {
+          const radius = this.nodeSize(id) * 0.62;
+          minX = Math.min(minX, point.x - radius);
+          minY = Math.min(minY, point.y - radius);
+          maxX = Math.max(maxX, point.x + radius);
+          maxY = Math.max(maxY, point.y + radius);
+        });
+        return { x: minX, y: minY, w: Math.max(maxX - minX, 1), h: Math.max(maxY - minY, 1) };
+      }
+
+      chooseLabelPlacement(service, positionsPx, nodeDisplaySizes, domainAnchors, width, height) {
+        const point = positionsPx[service.id];
+        const anchor = domainAnchors[service.domain];
+        const nodeRadius = nodeDisplaySizes[service.id] * 0.5;
+        const labelWidth = Math.min(164, Math.max(104, service.label.length * 8 + 40));
+        const labelHeight = 34;
+        const gap = 10;
+        const placements = ["above", "below", "left", "right"];
+
+        const boxFor = (placement) => {
+          if (placement === "above") {
+            return { x: point.x - labelWidth / 2, y: point.y - nodeRadius - gap - labelHeight, w: labelWidth, h: labelHeight };
+          }
+          if (placement === "below") {
+            return { x: point.x - labelWidth / 2, y: point.y + nodeRadius + gap, w: labelWidth, h: labelHeight };
+          }
+          if (placement === "left") {
+            return { x: point.x - nodeRadius - gap - labelWidth, y: point.y - labelHeight / 2, w: labelWidth, h: labelHeight };
+          }
+          return { x: point.x + nodeRadius + gap, y: point.y - labelHeight / 2, w: labelWidth, h: labelHeight };
+        };
+
+        let bestPlacement = "below";
+        let bestPenalty = Infinity;
+
+        placements.forEach((placement) => {
+          const box = boxFor(placement);
+          let penalty = 0;
+          if (box.x < 14 || box.x + box.w > width - 14) penalty += 500;
+          if (box.y < 90 || box.y + box.h > height - 16) penalty += 500;
+          if (placement === "left" && point.x > anchor.x) penalty -= 22;
+          if (placement === "right" && point.x < anchor.x) penalty -= 22;
+          if (placement === "above" && point.y > anchor.y) penalty -= 16;
+          if (placement === "below" && point.y < anchor.y) penalty -= 16;
+
+          Object.entries(positionsPx).forEach(([otherId, otherPoint]) => {
+            if (otherId === service.id) return;
+            const hitRadius = nodeDisplaySizes[otherId] * 0.34;
+            const overlapsX = box.x < otherPoint.x + hitRadius && box.x + box.w > otherPoint.x - hitRadius;
+            const overlapsY = box.y < otherPoint.y + hitRadius && box.y + box.h > otherPoint.y - hitRadius;
+            if (overlapsX && overlapsY) penalty += 44;
+          });
+
+          if (penalty < bestPenalty) {
+            bestPenalty = penalty;
+            bestPlacement = placement;
+          }
+        });
+
+        return bestPlacement;
+      }
+
+      renderNodes() {
+        const html = this.state.services.map((service) => {
+          const point = this.layout.positionsPercent[service.id];
+          const placement = this.layout.labelPlacement[service.id];
+          const domain = this.state.domainMeta[service.domain];
+          const isRelease = this.state.releaseWaveNodes.has(service.id);
+          const releaseClass = isRelease ? " is-release" : "";
+          return `
+            <button class="mesh-node health-${service.health} label-${placement}${releaseClass}" type="button" aria-label="${service.label}" data-service-id="${service.id}" style="--x:${point.x}%; --y:${point.y}%; --node-size:${this.layout.nodeDisplaySizes[service.id]}px; --domain-color:${domain.color}">
+              <div class="cell health-${service.health} lifecycle-${service.lifecycle}${releaseClass}" style="--intensity:${this.intensity(service)}">
+                <span class="halo"></span><span class="release-ring"></span><span class="release-dot"></span>
+                <span class="sat s1"></span><span class="sat s2"></span><span class="sat s3"></span>
+                <span class="membrane"></span><span class="orbit"></span><span class="glow"></span><span class="nucleus"></span>
+              </div>
+              <span class="node-label"><span class="node-label-dot"></span><span class="node-label-text">${service.label}</span></span>
+            </button>
+          `;
+        }).join("");
+
+        this.nodeLayer.innerHTML = html;
+        this.nodes = Array.from(this.nodeLayer.querySelectorAll(".mesh-node"));
+        this.nodes.forEach((node) => {
+          const id = node.dataset.serviceId;
+          node.addEventListener("mouseenter", () => {
+            if (this.focusedId && this.focusedId !== id) return;
+            clearTimeout(this.hoverTimer);
+            this.hoverTimer = setTimeout(() => this.setHover(id), 110);
+          });
+
+          node.addEventListener("mouseleave", (event) => {
+            clearTimeout(this.hoverTimer);
+            if (!this.focusedId && !this.isHoverTarget(event.relatedTarget)) {
+              this.hoverTimer = setTimeout(() => this.clearHover(), 110);
+            }
+          });
+
+          node.addEventListener("focus", () => {
+            if (!this.focusedId || this.focusedId === id) this.setHover(id);
+          });
+
+          node.addEventListener("blur", () => {
+            if (!this.focusedId) this.clearHover();
+          });
+
+          node.addEventListener("click", () => {
+            clearTimeout(this.hoverTimer);
+            this.setFocus(this.focusedId === id ? null : id);
+          });
+        });
+      }
+
+      buildDomainNodes(domainId, nodeSizes) {
+        return this.state.services
+          .filter((service) => service.domain === domainId)
+          .map((service) => {
+            const point = this.layout.positionsPx[service.id];
+            const size = nodeSizes[service.id] || 108;
+            return {
+              id: service.id,
+              x: point.x,
+              y: point.y,
+              radius: this.domainRadius(domainId, size)
+            };
+          });
+      }
+
+      buildDomainBridges(nodes) {
+        if (nodes.length < 2) return [];
+        const byId = new Map(nodes.map((node) => [node.id, node]));
+        const remaining = new Set(nodes.slice(1).map((node) => node.id));
+        const connected = [nodes[0].id];
+        const bridges = [];
+        const seen = new Set();
+
+        while (remaining.size) {
+          let best = null;
+          connected.forEach((fromId) => {
+            const from = byId.get(fromId);
+            remaining.forEach((toId) => {
+              const to = byId.get(toId);
+              const length = Math.hypot(to.x - from.x, to.y - from.y);
+              if (!best || length < best.length) {
+                best = { from: fromId, to: toId, length };
+              }
+            });
+          });
+
+          bridges.push([best.from, best.to]);
+          seen.add(edgeKey(best.from, best.to));
+          connected.push(best.to);
+          remaining.delete(best.to);
+        }
+
+        for (let left = 0; left < nodes.length; left += 1) {
+          for (let right = left + 1; right < nodes.length; right += 1) {
+            const a = nodes[left];
+            const b = nodes[right];
+            const key = edgeKey(a.id, b.id);
+            if (seen.has(key)) continue;
+            const threshold = ((a.radius + b.radius) / 2) * 4.1;
+            const distance = Math.hypot(b.x - a.x, b.y - a.y);
+            if (distance <= threshold) {
+              bridges.push([a.id, b.id]);
+              seen.add(key);
+            }
+          }
+        }
+
+        return bridges;
+      }
+
+      domainBlobMarkup(nodes, bridges, color, radiusOffset, bridgeFactor) {
+        const byId = new Map(nodes.map((node) => [node.id, node]));
+        const bridgeMarkup = bridges.map(([fromId, toId]) => {
+          const from = byId.get(fromId);
+          const to = byId.get(toId);
+          const bridgeWidth = Math.max(24, Math.min(from.radius, to.radius) * bridgeFactor);
+          return `<line class="domain-blob-bridge" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${color}" stroke-width="${bridgeWidth}" opacity="1" />`;
+        }).join("");
+
+        const circleMarkup = nodes.map((node) => {
+          return `<circle class="domain-blob-circle" cx="${node.x}" cy="${node.y}" r="${Math.max(18, node.radius + radiusOffset)}" fill="${color}" opacity="1" />`;
+        }).join("");
+
+        return bridgeMarkup + circleMarkup;
+      }
+
+      domainStructureMarkup(nodes, bridges, color) {
+        const byId = new Map(nodes.map((node) => [node.id, node]));
+        return bridges.map(([fromId, toId]) => {
+          const from = byId.get(fromId);
+          const to = byId.get(toId);
+          return `<line class="domain-structure-bridge" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${color}" stroke-width="0.85" opacity="0.7" />`;
+        }).join("");
+      }
+
+      domainHitMarkup(nodes, bridges, domainId) {
+        const byId = new Map(nodes.map((node) => [node.id, node]));
+        const bridgeMarkup = bridges.map(([fromId, toId]) => {
+          const from = byId.get(fromId);
+          const to = byId.get(toId);
+          const bridgeWidth = Math.max(44, Math.min(from.radius, to.radius) * 1.48);
+          return `<line class="domain-hit-target domain-hit-bridge" data-domain="${domainId}" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke-width="${bridgeWidth}" />`;
+        }).join("");
+
+        const circleMarkup = nodes.map((node) => {
+          return `<circle class="domain-hit-target domain-hit-circle" data-domain="${domainId}" cx="${node.x}" cy="${node.y}" r="${Math.max(34, node.radius + 20)}" />`;
+        }).join("");
+
+        return bridgeMarkup + circleMarkup;
+      }
+
+      domainFiltersMarkup() {
+        return `
+          <defs>
+            <filter id="domain-goo" x="-24%" y="-24%" width="148%" height="148%" color-interpolation-filters="sRGB">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="16" result="blur" />
+              <feColorMatrix in="blur" mode="matrix" values="
+                1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 24 -11
+              " result="goo" />
+            </filter>
+            <filter id="domain-glow" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="22" />
+            </filter>
+          </defs>
+        `;
+      }
+
+      bindDomainHits() {
+        this.domainHitTargets = Array.from(this.domainLayer.querySelectorAll(".domain-hit-target"));
+        this.domainRegions = Array.from(this.domainLayer.querySelectorAll(".domain-region"));
+
+        this.domainHitTargets.forEach((target) => {
+          const domainId = target.dataset.domain;
+
+          target.addEventListener("mouseenter", () => {
+            if (this.focusedId) return;
+            clearTimeout(this.hoverTimer);
+            this.hoverTimer = setTimeout(() => this.setDomainHover(domainId), 90);
+          });
+
+          target.addEventListener("mouseleave", (event) => {
+            if (this.focusedId) return;
+            clearTimeout(this.hoverTimer);
+            if (!this.isHoverTarget(event.relatedTarget)) {
+              this.hoverTimer = setTimeout(() => this.clearHover(), 90);
+            }
+          });
+        });
+      }
+
+      drawDomains() {
+        const nodeSizes = Object.fromEntries(this.nodes.map((node) => [node.dataset.serviceId, node.offsetWidth]));
+        const regions = this.currentDomains().map((domainId) => {
+          const domain = this.state.domainMeta[domainId];
+          const nodes = this.buildDomainNodes(domainId, nodeSizes);
+          const bridges = this.buildDomainBridges(nodes);
+          const glowMarkup = this.lod === "normal" ? `
+              <g class="domain-glow-layer" filter="url(#domain-glow)">
+                ${this.domainBlobMarkup(nodes, bridges, domain.color, 30, 1.36)}
+              </g>` : "";
+          const structureMarkup = this.lod === "normal" ? `
+              <g class="domain-structure-layer">
+                ${this.domainStructureMarkup(nodes, bridges, domain.color)}
+              </g>` : "";
+          const shellMarkup = this.lod === "high" ? "" : `
+              <g class="domain-shell-layer" filter="url(#domain-goo)">
+                ${this.domainBlobMarkup(nodes, bridges, domain.color, 18, 1.02)}
+              </g>`;
+          return `
+            <g class="domain-region" data-domain="${domainId}">
+              ${glowMarkup}
+              ${shellMarkup}
+              <g class="domain-fill-layer" filter="url(#domain-goo)">
+                ${this.domainBlobMarkup(nodes, bridges, domain.color, 6, 0.76)}
+              </g>
+              ${structureMarkup}
+              <g class="domain-hit-layer">
+                ${this.domainHitMarkup(nodes, bridges, domainId)}
+              </g>
+            </g>
+          `;
+        }).join("");
+
+        this.domainLayer.setAttribute("viewBox", `0 0 ${this.layout.width} ${this.layout.height}`);
+        this.domainLayer.innerHTML = this.domainFiltersMarkup() + regions;
+        this.bindDomainHits();
+      }
+
+      clippedEdge(from, to, nodeSizes) {
+        const startCenter = this.layout.positionsPx[from];
+        const endCenter = this.layout.positionsPx[to];
+        const dx = endCenter.x - startCenter.x;
+        const dy = endCenter.y - startCenter.y;
+        const distance = Math.max(Math.hypot(dx, dy), 1);
+        const ux = dx / distance;
+        const uy = dy / distance;
+        const startRadius = (nodeSizes[from] || 108) * 0.39;
+        const endRadius = (nodeSizes[to] || 108) * 0.39;
+
+        return {
+          start: { x: startCenter.x + ux * startRadius, y: startCenter.y + uy * startRadius },
+          end: { x: endCenter.x - ux * endRadius, y: endCenter.y - uy * endRadius },
+          ux,
+          uy,
+          distance
+        };
+      }
+
+      curvedEdgePath(from, to, nodeSizes) {
+        const geometry = this.clippedEdge(from, to, nodeSizes);
+        const midX = (geometry.start.x + geometry.end.x) / 2;
+        const midY = (geometry.start.y + geometry.end.y) / 2;
+        const nx = -geometry.uy;
+        const ny = geometry.ux;
+        const signSeed = from.charCodeAt(from.length - 1) + to.charCodeAt(to.length - 1);
+        const sign = signSeed % 2 === 0 ? 1 : -1;
+        const curve = Math.max(14, Math.min(geometry.distance * 0.10, 54));
+        const controlX = midX + nx * curve * sign;
+        const controlY = midY + ny * curve * sign;
+        return `M ${geometry.start.x} ${geometry.start.y} Q ${controlX} ${controlY} ${geometry.end.x} ${geometry.end.y}`;
+      }
+
+      drawEdges() {
+        const nodeSizes = Object.fromEntries(this.nodes.map((node) => [node.dataset.serviceId, node.offsetWidth]));
+        this.edgeLayer.setAttribute("viewBox", `0 0 ${this.layout.width} ${this.layout.height}`);
+        this.edgeLayer.innerHTML = this.state.links.map(([from, to]) => {
+          const isRelease = this.state.releaseWaveEdges.has(edgeKey(from, to));
+          const path = this.curvedEdgePath(from, to, nodeSizes);
+          return `<path class="mesh-edge${isRelease ? " is-release" : ""}" data-from="${from}" data-to="${to}" d="${path}" />`;
+        }).join("");
+        this.edges = Array.from(this.edgeLayer.querySelectorAll(".mesh-edge"));
+      }
+
+      positionHoverCard(id) {
+        const point = this.layout.positionsPercent[id];
+        const alignLeft = point.x > 60;
+        const left = alignLeft ? Math.max(point.x - 14, 24) : Math.min(point.x + 14, 76);
+        const top = Math.max(Math.min(point.y - 14, 72), 10);
+        this.hoverCard.style.setProperty("--hover-left", `${left}%`);
+        this.hoverCard.style.setProperty("--hover-top", `${top}%`);
+        this.hoverCard.classList.toggle("align-left", alignLeft);
+        this.hoverCard.classList.toggle("align-right", !alignLeft);
+      }
+
+      populateHover(id) {
+        const service = this.serviceMap.get(id);
+        const domain = this.state.domainMeta[service.domain];
+        const mode = this.serviceMode(service);
+
+        this.hoverCard.querySelector("[data-role='hover-name']").textContent = service.label;
+        this.hoverCard.querySelector("[data-role='hover-release']").textContent = `${domain.label} / release ${service.release}`;
+
+        const domainChip = this.hoverCard.querySelector("[data-role='hover-domain']");
+        domainChip.textContent = domain.label;
+        domainChip.className = "state-chip domain-chip";
+        domainChip.style.setProperty("--domain-color", domain.color);
+
+        const healthChip = this.hoverCard.querySelector("[data-role='hover-health']");
+        healthChip.textContent = this.healthLabel(service.health);
+        healthChip.className = `state-chip ${this.chipClass(service.health)}`;
+
+        const modeChip = this.hoverCard.querySelector("[data-role='hover-mode']");
+        modeChip.textContent = mode.label;
+        modeChip.className = mode.className;
+
+        this.hoverCard.querySelector("[data-role='hover-latency']").textContent = service.latency;
+        this.hoverCard.querySelector("[data-role='hover-error']").textContent = service.errorRate;
+      }
+
+      populateFocus(id) {
+        const service = this.serviceMap.get(id);
+        const domain = this.state.domainMeta[service.domain];
+        const mode = this.serviceMode(service);
+
+        this.focusPanel.querySelector("[data-role='focus-name']").textContent = service.label;
+        this.focusPanel.querySelector("[data-role='focus-release']").textContent = `${domain.label} / release ${service.release} / ${service.deploy}`;
+
+        const domainChip = this.focusPanel.querySelector("[data-role='focus-domain']");
+        domainChip.textContent = domain.label;
+        domainChip.className = "state-chip domain-chip";
+        domainChip.style.setProperty("--domain-color", domain.color);
+
+        const healthChip = this.focusPanel.querySelector("[data-role='focus-health']");
+        healthChip.textContent = this.healthLabel(service.health);
+        healthChip.className = `state-chip ${this.chipClass(service.health)}`;
+
+        const modeChip = this.focusPanel.querySelector("[data-role='focus-mode']");
+        modeChip.textContent = mode.label;
+        modeChip.className = mode.className;
+
+        this.focusPanel.querySelector("[data-role='focus-replicas']").textContent = service.replicas;
+        this.focusPanel.querySelector("[data-role='focus-traffic']").textContent = service.traffic;
+        this.focusPanel.querySelector("[data-role='focus-latency']").textContent = service.latency;
+        this.focusPanel.querySelector("[data-role='focus-error']").textContent = service.errorRate;
+        this.focusPanel.querySelector("[data-role='focus-cpu']").textContent = service.cpu;
+        this.focusPanel.querySelector("[data-role='focus-memory']").textContent = service.memory;
+        this.focusPanel.querySelector("[data-role='focus-deploy']").textContent = service.deploy;
+      }
+
+      isHoverTarget(target) {
+        return !!(target && (
+          this.nodeLayer.contains(target) ||
+          this.hoverCard.contains(target) ||
+          this.domainHitTargets.some((hit) => hit === target || hit.contains?.(target))
+        ));
+      }
+
+      setHover(id) {
+        if (this.focusedId && this.focusedId !== id) return;
+        this.hoveredId = id;
+        this.hoveredDomain = null;
+        this.positionHoverCard(id);
+        this.populateHover(id);
+        this.renderInteraction();
+      }
+
+      setDomainHover(domainId) {
+        if (this.focusedId) return;
+        this.hoveredId = null;
+        this.hoveredDomain = domainId;
+        this.renderInteraction();
+      }
+
+      clearHover() {
+        this.hoveredId = null;
+        this.hoveredDomain = null;
+        this.renderInteraction();
+      }
+
+      setFocus(id) {
+        this.focusedId = id;
+        this.hoveredId = id;
+        this.hoveredDomain = null;
+        if (id) {
+          this.populateFocus(id);
+          this.positionHoverCard(id);
+        }
+        this.renderInteraction();
+      }
+
+      clearInteraction(silent = false) {
+        clearTimeout(this.hoverTimer);
+        this.hoveredId = null;
+        this.hoveredDomain = null;
+        this.focusedId = null;
+        if (!silent) this.renderInteraction();
+      }
+
+      renderInteraction() {
+        const activeId = this.focusedId || this.hoveredId;
+        const activeDomain = this.hoveredDomain;
+        const related = activeId ? this.adjacency.get(activeId) : new Set();
+
+        this.scene.classList.toggle("has-hover", !!this.hoveredId && !this.focusedId);
+        this.scene.classList.toggle("has-focus", !!this.focusedId);
+        this.scene.classList.toggle("has-active", !!activeId);
+        this.scene.classList.toggle("has-domain-hover", !!activeDomain && !activeId);
+        this.hoverCard.setAttribute("aria-hidden", String(!(this.hoveredId && !this.focusedId)));
+        this.focusPanel.setAttribute("aria-hidden", String(!this.focusedId));
+        this.domainIndicator.setAttribute("aria-hidden", String(!(activeDomain && !activeId)));
+
+        if (activeDomain && !activeId) {
+          const domain = this.state.domainMeta[activeDomain];
+          this.domainIndicator.style.setProperty("--domain-color", domain.color);
+          this.domainIndicator.querySelector("[data-role='domain-name']").textContent = domain.label;
+        }
+
+        this.nodes.forEach((node) => {
+          const id = node.dataset.serviceId;
+          const service = this.serviceMap.get(id);
+          const isAlerting = service.health === "degraded" || service.health === "critical";
+          const isActive = id === activeId;
+          const isFocused = id === this.focusedId;
+          const isHovered = id === this.hoveredId && !this.focusedId;
+          const isRelated = !!activeId && (isActive || related.has(id));
+          const isDimmed = !!activeId && !isRelated;
+          node.classList.toggle("is-hovered", isHovered);
+          node.classList.toggle("is-focused", isFocused);
+          node.classList.toggle("is-related", isRelated);
+          node.classList.toggle("is-dimmed", isDimmed);
+          node.classList.toggle("is-release", this.state.releaseWaveNodes.has(id));
+          node.classList.toggle("show-label", isAlerting || (!!activeId && isRelated) || (!activeId && !!activeDomain && service.domain === activeDomain));
+          node.setAttribute("aria-expanded", String(isFocused));
+        });
+
+        this.edges.forEach((edge) => {
+          const from = edge.dataset.from;
+          const to = edge.dataset.to;
+          const isRelated = !!activeId && (from === activeId || to === activeId);
+          edge.classList.toggle("is-related", isRelated);
+          edge.classList.toggle("is-dimmed", !!activeId && !isRelated);
+        });
+
+        this.domainRegions.forEach((region) => {
+          const isActiveDomain = !activeId && !!activeDomain && region.dataset.domain === activeDomain;
+          region.classList.toggle("is-active-domain", isActiveDomain);
+        });
+      }
+
+      renderRuntimeLegend() {
+        const chips = this.currentDomains().map((domainId) => {
+          const domain = this.state.domainMeta[domainId];
+          return `<span class="runtime-chip" style="--domain-color:${domain.color}">${domain.label}</span>`;
+        }).join("");
+        this.runtimeLegend.innerHTML = chips;
+      }
+
+      renderStats() {
+        this.domainCount.textContent = String(this.currentDomains().length);
+        this.serviceCount.textContent = String(this.state.services.length);
+        this.linkCount.textContent = String(this.state.links.length);
+        this.zoomReadout.textContent = `${Math.round(this.userZoom * 100)}%`;
+        this.statusLine.textContent = this.state.status;
+      }
+
+      render() {
+        const serviceCount = this.state.services.length;
+        this.lod = serviceCount >= 52 ? "high" : serviceCount >= 32 ? "medium" : "normal";
+        this.scene.classList.toggle("lod-medium", this.lod === "medium" || this.lod === "high");
+        this.scene.classList.toggle("lod-high", this.lod === "high");
+        this.layout = this.computeLayout();
+        this.renderNodes();
+        this.drawDomains();
+        this.drawEdges();
+        this.renderRuntimeLegend();
+        this.renderStats();
+        if (this.focusedId || this.hoveredId) {
+          this.positionHoverCard(this.focusedId || this.hoveredId);
+        }
+        this.renderInteraction();
+      }
+    }
+
+    new DynamicConstellationApp(document.getElementById("dynamic-test"));
+  </script>
+</body>
+</html>
