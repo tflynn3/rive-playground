@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ribbon River</title>
+  <script src="./shared.js"></script>
+  <style>
+    :root { --bg:#081119; --line:rgba(116,216,255,.14); --text:#eef7fb; --muted:#9ab0bf; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family: Consolas, "SFMono-Regular", Menlo, monospace; color:var(--text); background: linear-gradient(180deg, #0a1622, #060d15); }
+    .shell { width:min(1320px, calc(100vw - 28px)); margin:0 auto; padding:22px 0 24px; }
+    .page-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:18px; }
+    .eyebrow { color:#7cdcff; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:6px 0 8px; font-size:clamp(2rem, 3vw, 3rem); }
+    p { margin:0; max-width:760px; color:var(--muted); line-height:1.55; }
+    .back-link { color:#dff7ff; text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:10px 14px; background:rgba(255,255,255,.03); }
+    .scene { position:relative; min-height:760px; border-radius:30px; overflow:hidden; border:1px solid var(--line); background: radial-gradient(circle at top, rgba(116,216,255,.04), transparent 32%), #071019; }
+    svg { width:100%; height:760px; display:block; }
+    .ribbon { fill:none; stroke-linecap:round; stroke-linejoin:round; opacity:.92; }
+    .ribbon.flow { stroke-dasharray: 18 28; animation: stream 9s linear infinite; }
+    .service-bead { fill:#081119; stroke-width:2; }
+    .service-core { animation: pulse 2.8s infinite ease-in-out; }
+    .label { fill:#eef7fb; font-size:13px; }
+    .deploy-ring { fill:none; stroke:#74d8ff; stroke-width:2; stroke-dasharray:4 8; animation: spin 8s linear infinite; transform-origin:center; }
+    .scale-wake { fill:none; stroke:#d6f7ff; stroke-width:3; opacity:.82; animation: wake 2.2s infinite ease-in-out; }
+    @keyframes stream { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -92; } }
+    @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.1); } }
+    @keyframes wake { 0%,100% { transform:scaleX(.94); opacity:.42; } 50% { transform:scaleX(1.06); opacity:1; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Ribbon River", "Services are buoys riding braided current bands. The composition emphasizes directional flow and throughput as moving ribbons rather than lines or static nodes."));</script>
+    <div class="scene"><svg viewBox="0 0 1280 760" id="svg"></svg></div>
+  </div>
+  <script>
+    const pos = { edge:[128,136], auth:[336,242], api:[592,172], billing:[846,216], events:[612,462], worker:[926,426], profile:[1054,164], analytics:[1016,560] };
+    const ribbons = [
+      { d: "M 70 134 C 212 112, 308 252, 580 176 S 882 188, 1180 164", color: "#6cf4c7", width: 26, flow: false },
+      { d: "M 120 214 C 274 246, 422 488, 610 462 S 912 474, 1160 560", color: "#74d8ff", width: 24, flow: true },
+      { d: "M 552 170 C 684 170, 810 220, 1010 164", color: "#ffbf5f", width: 18, flow: false }
+    ];
+    const svg = document.getElementById("svg");
+    ribbons.forEach((ribbon) => {
+      svg.appendChild(BreadthVis.svg("path", { d: ribbon.d, class: `ribbon${ribbon.flow ? " flow" : ""}`, stroke: ribbon.color, "stroke-width": ribbon.width, opacity: ".12" }));
+      svg.appendChild(BreadthVis.svg("path", { d: ribbon.d, class: `ribbon${ribbon.flow ? " flow" : ""}`, stroke: ribbon.color, "stroke-width": ribbon.width - 12 }));
+    });
+    BreadthVis.services.forEach((service) => {
+      const [x, y] = pos[service.id];
+      const accent = BreadthVis.serviceAccent(service);
+      const g = BreadthVis.svg("g", { transform: `translate(${x} ${y})` });
+      if (service.lifecycle === "deploying") g.appendChild(BreadthVis.svg("circle", { r: 28, class: "deploy-ring" }));
+      if (service.lifecycle === "scaling") g.appendChild(BreadthVis.svg("ellipse", { rx: 36, ry: 16, cy: 26, class: "scale-wake" }));
+      g.appendChild(BreadthVis.svg("circle", { r: 20, class: "service-bead", stroke: accent }));
+      g.appendChild(BreadthVis.svg("circle", { r: 10, class: "service-core", fill: accent }));
+      g.appendChild(BreadthVis.svg("text", { x: 30, y: 5, class: "label" })).textContent = service.label;
+      svg.appendChild(g);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Topographic Islands</title>
+  <script src="./shared.js"></script>
+  <style>
+    :root { --bg:#071018; --line:rgba(116,216,255,.14); --text:#eef7fb; --muted:#9ab0bf; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family: Consolas, "SFMono-Regular", Menlo, monospace; color:var(--text); background: linear-gradient(180deg, #0a1622, #060d15); }
+    .shell { width:min(1320px, calc(100vw - 28px)); margin:0 auto; padding:22px 0 24px; }
+    .page-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:18px; }
+    .eyebrow { color:#7cdcff; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:6px 0 8px; font-size:clamp(2rem, 3vw, 3rem); }
+    p { margin:0; max-width:760px; color:var(--muted); line-height:1.55; }
+    .back-link { color:#dff7ff; text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:10px 14px; background:rgba(255,255,255,.03); }
+    .scene { position:relative; min-height:760px; border-radius:30px; overflow:hidden; border:1px solid var(--line); background: radial-gradient(circle at top, rgba(116,216,255,.05), transparent 34%), #071019; }
+    svg { width:100%; height:760px; display:block; }
+    .contour { fill:none; stroke-width:1.3; opacity:.82; animation: drift 14s infinite alternate ease-in-out; }
+    .contour.inner { opacity:1; stroke-width:1.6; }
+    .ridge-link { fill:none; stroke:rgba(116,216,255,.18); stroke-width:1.5; stroke-dasharray:8 14; animation: walk 8s linear infinite; }
+    .node { fill:#071019; stroke-width:2; }
+    .core { animation: beat 2.6s infinite ease-in-out; }
+    .label { fill:#edf7fb; font-size:13px; }
+    .deploy-ring { fill:none; stroke:#74d8ff; stroke-width:2; stroke-dasharray:4 8; animation: spin 7.2s linear infinite; transform-origin:center; }
+    .scaling-ripple { fill:none; stroke:#d7f8ff; stroke-width:2.5; opacity:.84; animation: ripple 2.6s infinite ease-in-out; }
+    @keyframes beat { 0%,100% { transform:scale(1); } 50% { transform:scale(1.1); } }
+    @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    @keyframes ripple { 0%,100% { transform:scale(.92); opacity:.52; } 50% { transform:scale(1.06); opacity:1; } }
+    @keyframes walk { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -42; } }
+    @keyframes drift { from { transform:translate(0,0); } to { transform:translate(10px,-6px); } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Topographic Islands", "Services become peaks inside computational terrain. Contours, ridges, and elevation shells carry the information instead of explicit network circles."));</script>
+    <div class="scene"><svg viewBox="0 0 1280 760" id="svg"></svg></div>
+  </div>
+  <script>
+    const pos = { edge:[160,156], auth:[396,210], api:[664,170], billing:[886,252], events:[610,454], worker:[884,492], profile:[1054,180], analytics:[1036,520] };
+    const svg = document.getElementById("svg");
+    BreadthVis.links.forEach(([a, b]) => {
+      const [x1, y1] = pos[a]; const [x2, y2] = pos[b];
+      svg.appendChild(BreadthVis.svg("path", { d: `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1 - 28}, ${(x1 + x2) / 2} ${y2 + 28}, ${x2} ${y2}`, class: "ridge-link" }));
+    });
+    BreadthVis.services.forEach((service, index) => {
+      const [x, y] = pos[service.id];
+      const accent = BreadthVis.serviceAccent(service);
+      const g = BreadthVis.svg("g", { transform: `translate(${x} ${y})` });
+      [76, 56, 38].forEach((radius, layer) => {
+        g.appendChild(BreadthVis.svg("ellipse", {
+          rx: radius + (index % 2 ? 8 : -6),
+          ry: radius * 0.58 + layer * 2,
+          class: `contour${layer === 2 ? " inner" : ""}`,
+          stroke: layer === 2 ? accent : `color-mix(in srgb, ${accent} 42%, rgba(255,255,255,.08))`
+        }));
+      });
+      if (service.lifecycle === "deploying") g.appendChild(BreadthVis.svg("ellipse", { rx: 88, ry: 54, class: "deploy-ring" }));
+      if (service.lifecycle === "scaling") g.appendChild(BreadthVis.svg("ellipse", { rx: 66, ry: 40, class: "scaling-ripple" }));
+      g.appendChild(BreadthVis.svg("circle", { r: 18, class: "node", stroke: accent }));
+      g.appendChild(BreadthVis.svg("circle", { r: 9, class: "core", fill: accent }));
+      g.appendChild(BreadthVis.svg("text", { x: 80, y: 4, class: "label" })).textContent = service.label;
+      svg.appendChild(g);
+    });
+  </script>
+</body>
+</html>

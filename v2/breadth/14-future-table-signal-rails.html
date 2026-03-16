@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Future Table / Signal Rails</title>
+  <script src="./shared.js"></script>
+  <script src="./future-table-shared.js"></script>
+  <link rel="stylesheet" href="./future-table-shared.css">
+  <style>
+    .canvas {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+    .rail {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(116, 216, 255, 0.12);
+      background: rgba(7, 17, 26, 0.82);
+      min-height: 220px;
+    }
+    .rail-side {
+      position: relative;
+      padding: 20px;
+      border-right: 1px solid rgba(116, 216, 255, 0.12);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+        color-mix(in srgb, var(--domain-color) 10%, rgba(5, 12, 19, 0.9));
+    }
+    .rail-side::after {
+      content: "";
+      position: absolute;
+      inset: auto 20px 18px 20px;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--domain-color), transparent);
+    }
+    .rail-side h2 {
+      margin: 0 0 10px;
+      font-size: 1.08rem;
+    }
+    .rail-side p {
+      font-size: 0.78rem;
+    }
+    .rail-table {
+      overflow: hidden;
+    }
+    .rail-table .service-table {
+      height: 100%;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .rail-table .table-header,
+    .rail-table .service-row {
+      grid-template-columns: minmax(220px, 2fr) 104px 116px 94px 102px 118px 136px;
+    }
+    .rail-table .service-row {
+      min-height: 58px;
+    }
+    .rail-table .service-row::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 2px;
+      background: linear-gradient(180deg, transparent, var(--domain-color), transparent);
+      opacity: 0;
+      transition: opacity 140ms ease;
+    }
+    .rail-table .service-row:hover::before,
+    .rail-table .service-row.is-active::before {
+      opacity: 1;
+    }
+    @media (max-width: 1200px) {
+      .rail { grid-template-columns: 1fr; }
+      .rail-side { border-right: 0; border-bottom: 1px solid rgba(116, 216, 255, 0.12); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Future Table / Signal Rails", "Each domain becomes a horizontal rail with a dedicated identity panel on the left and a live tabular stream on the right."));</script>
+    <div class="scene">
+      <div class="summary"></div>
+      <div class="scene-note">This version is built for fast left-to-right scan. It keeps the domain grouping explicit without turning into cards inside cards.</div>
+      <div class="canvas" id="canvas"></div>
+    </div>
+  </div>
+  <script>
+    const scene = document.querySelector(".scene");
+    scene.querySelector(".summary").innerHTML = FutureTableLab.summaryCards("signal rails");
+    scene.insertAdjacentHTML("beforeend", FutureTableLab.focusPanelMarkup());
+
+    const canvas = document.getElementById("canvas");
+    canvas.innerHTML = FutureTableLab.groupedDomains.map((domain) => `
+      <section class="rail" style="--domain-color:${domain.color}">
+        <div class="rail-side">
+          <h2>${domain.label}</h2>
+          <p>${domain.note}</p>
+          ${FutureTableLab.domainHeaderMeta(domain)}
+        </div>
+        <div class="rail-table">
+          <div class="service-table">
+            ${FutureTableLab.tableHeaderMarkup()}
+            ${domain.services.map((service) => FutureTableLab.serviceRowMarkup(service)).join("")}
+          </div>
+        </div>
+      </section>
+    `).join("");
+
+    FutureTableLab.attachPanel(scene);
+  </script>
+</body>
+</html>

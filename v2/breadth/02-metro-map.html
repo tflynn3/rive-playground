@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metro Map</title>
+  <script src="./shared.js"></script>
+  <style>
+    :root { --bg:#08121b; --panel:rgba(9,18,28,.88); --line:rgba(116,216,255,.14); --text:#eef7fb; --muted:#9ab0bf; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family: Consolas, "SFMono-Regular", Menlo, monospace; color:var(--text); background: linear-gradient(180deg, #091521, #060d15); }
+    .shell { width:min(1320px, calc(100vw - 28px)); margin:0 auto; padding:22px 0 24px; }
+    .page-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:18px; }
+    .eyebrow { color:#7cdcff; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:6px 0 8px; font-size:clamp(2rem, 3vw, 3rem); }
+    p { margin:0; max-width:760px; color:var(--muted); line-height:1.55; }
+    .back-link { color:#dff7ff; text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:10px 14px; background:rgba(255,255,255,.03); }
+    .scene { min-height:760px; border-radius:30px; overflow:hidden; border:1px solid var(--line); background: radial-gradient(circle at top, rgba(116,216,255,.06), transparent 36%), #071019; }
+    svg { width:100%; height:760px; display:block; }
+    .route { fill:none; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; opacity:.92; }
+    .route.dashed { stroke-dasharray: 12 18; animation: roll 7s linear infinite; }
+    .route-echo { fill:none; stroke: rgba(255,255,255,.08); stroke-width: 2; stroke-dasharray: 8 12; }
+    .station-ring { fill:#071019; stroke-width:6; }
+    .station-core { fill:#eaf8ff; }
+    .station-label { fill:#eef7fb; font-size:13px; }
+    .station-chip { fill:rgba(7,16,25,.88); stroke:rgba(116,216,255,.16); stroke-width:1; }
+    .station-mode { fill:#c6deeb; font-size:11px; letter-spacing:.06em; text-transform:uppercase; }
+    .scaling-band { fill:none; stroke:#d8f7ff; stroke-width:3; opacity:.9; animation: pulse 2.4s infinite ease-in-out; }
+    .critical-spoke { stroke:#ff5d67; stroke-width:2.5; stroke-linecap:round; }
+    @keyframes roll { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -60; } }
+    @keyframes pulse { 0%,100% { transform: scale(1); opacity:.76; } 50% { transform: scale(1.06); opacity:1; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Metro Map", "Services are transit stations on a system map. Release activity becomes moving infrastructure, and state reads like line status rather than machine health."));</script>
+    <div class="scene"><svg viewBox="0 0 1280 760" id="svg"></svg></div>
+  </div>
+  <script>
+    const pos = { edge:[144,120], auth:[366,242], api:[624,206], billing:[884,274], worker:[1094,426], events:[658,470], profile:[1030,152], analytics:[912,590] };
+    const routes = [
+      { path: "M 120 120 L 360 240 L 620 206 L 884 274 L 1094 426", stroke: "#68f6c7", dashed: false },
+      { path: "M 360 240 L 620 206 L 658 470 L 912 590", stroke: "#7bd8ff", dashed: false },
+      { path: "M 620 206 L 1030 152", stroke: "#ffbf5f", dashed: false },
+      { path: "M 120 120 L 620 206 L 884 274", stroke: "#74d8ff", dashed: true }
+    ];
+    const svg = document.getElementById("svg");
+    routes.forEach((route) => {
+      svg.appendChild(BreadthVis.svg("path", { d: route.path, class: "route-echo" }));
+      svg.appendChild(BreadthVis.svg("path", { d: route.path, class: `route${route.dashed ? " dashed" : ""}`, stroke: route.stroke }));
+    });
+    BreadthVis.services.forEach((service) => {
+      const [x, y] = pos[service.id];
+      const accent = BreadthVis.serviceAccent(service);
+      const g = BreadthVis.svg("g", { transform: `translate(${x} ${y})` });
+      g.appendChild(BreadthVis.svg("circle", { r: 18, class: "station-ring", stroke: accent }));
+      g.appendChild(BreadthVis.svg("circle", { r: 7, class: "station-core", fill: accent }));
+      if (service.lifecycle === "deploying") {
+        g.appendChild(BreadthVis.svg("circle", { r: 28, class: "route dashed", stroke: "#74d8ff", "stroke-width": "3" }));
+      }
+      if (service.lifecycle === "scaling") {
+        g.appendChild(BreadthVis.svg("circle", { r: 26, class: "scaling-band" }));
+      }
+      if (service.health === "critical") {
+        g.appendChild(BreadthVis.svg("line", { x1: -18, y1: -18, x2: 18, y2: 18, class: "critical-spoke" }));
+        g.appendChild(BreadthVis.svg("line", { x1: 18, y1: -18, x2: -18, y2: 18, class: "critical-spoke" }));
+      }
+      g.appendChild(BreadthVis.svg("text", { x: 32, y: -4, class: "station-label" })).textContent = service.label;
+      const chip = BreadthVis.svg("g", { transform: "translate(30 8)" });
+      chip.appendChild(BreadthVis.svg("rect", { width: 106, height: 20, rx: 10, class: "station-chip" }));
+      chip.appendChild(BreadthVis.svg("text", { x: 10, y: 14, class: "station-mode" })).textContent = service.lifecycle === "stable" ? service.health : service.lifecycle;
+      g.appendChild(chip);
+      svg.appendChild(g);
+    });
+  </script>
+</body>
+</html>

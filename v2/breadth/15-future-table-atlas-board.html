@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Future Table / Atlas Board</title>
+  <script src="./shared.js"></script>
+  <script src="./future-table-shared.js"></script>
+  <link rel="stylesheet" href="./future-table-shared.css">
+  <style>
+    .canvas {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 18px;
+      align-content: start;
+    }
+    .atlas-column {
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+    .atlas-card {
+      position: relative;
+      border-radius: 30px;
+      overflow: hidden;
+      border: 1px solid rgba(116, 216, 255, 0.14);
+      background: rgba(7, 17, 26, 0.84);
+      box-shadow: 0 22px 36px rgba(0, 0, 0, 0.28);
+    }
+    .atlas-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(45deg, transparent 0 48%, rgba(255, 255, 255, 0.03) 48% 49%, transparent 49% 100%),
+        radial-gradient(circle at top right, color-mix(in srgb, var(--domain-color) 16%, transparent), transparent 38%);
+      pointer-events: none;
+    }
+    .atlas-card .domain-head {
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(116, 216, 255, 0.1);
+    }
+    .atlas-card .service-table {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .atlas-card .table-header,
+    .atlas-card .service-row {
+      grid-template-columns: minmax(200px, 2fr) 100px 112px 92px 96px 118px 138px;
+    }
+    .atlas-card .service-row {
+      min-height: 62px;
+    }
+    .atlas-card.primary {
+      min-height: 0;
+    }
+    .atlas-card.secondary .service-row {
+      min-height: 56px;
+    }
+    @media (max-width: 1180px) {
+      .canvas { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Future Table / Atlas Board", "A board of domain cabinets with asymmetric hierarchy. Core and processors get larger operational surfaces while the rest remain tightly packed."));</script>
+    <div class="scene">
+      <div class="summary"></div>
+      <div class="scene-note">This one treats the domains like an atlas of operational boards. It is less purely tabular, but still preserves per-domain sub-tables.</div>
+      <div class="canvas" id="canvas"></div>
+    </div>
+  </div>
+  <script>
+    const scene = document.querySelector(".scene");
+    scene.querySelector(".summary").innerHTML = FutureTableLab.summaryCards("atlas board");
+    scene.insertAdjacentHTML("beforeend", FutureTableLab.focusPanelMarkup());
+
+    const primary = ["core", "processors"];
+    const secondary = ["frontend", "auth", "data"];
+
+    function renderDomain(domainId, klass) {
+      const domain = FutureTableLab.groupedDomains.find((entry) => entry.id === domainId);
+      return `
+        <section class="atlas-card ${klass}" style="--domain-color:${domain.color}">
+          <div class="domain-head">
+            <div class="domain-title">
+              <h2>${domain.label}</h2>
+              <p>${domain.note}</p>
+            </div>
+            ${FutureTableLab.domainHeaderMeta(domain)}
+          </div>
+          <div class="service-table">
+            ${FutureTableLab.tableHeaderMarkup()}
+            ${domain.services.map((service) => FutureTableLab.serviceRowMarkup(service)).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    document.getElementById("canvas").innerHTML = `
+      <div class="atlas-column">
+        ${primary.map((id) => renderDomain(id, "primary")).join("")}
+      </div>
+      <div class="atlas-column">
+        ${secondary.map((id) => renderDomain(id, "secondary")).join("")}
+      </div>
+    `;
+
+    FutureTableLab.attachPanel(scene);
+  </script>
+</body>
+</html>

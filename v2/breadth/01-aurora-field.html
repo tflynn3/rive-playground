@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aurora Field</title>
+  <script src="./shared.js"></script>
+  <style>
+    :root { --bg: #061019; --panel: rgba(7, 17, 28, 0.86); --line: rgba(117, 216, 255, 0.14); --text: #eef6fb; --muted: #97adbb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: Consolas, "SFMono-Regular", Menlo, monospace; color: var(--text); background: radial-gradient(circle at top, rgba(79, 182, 255, 0.10), transparent 38%), linear-gradient(180deg, #08131e, var(--bg)); }
+    .shell { width: min(1320px, calc(100vw - 28px)); margin: 0 auto; padding: 22px 0 24px; }
+    .page-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+    .eyebrow { color: #7cdcff; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    h1 { margin: 6px 0 8px; font-size: clamp(2rem, 3vw, 3rem); }
+    p { margin: 0; max-width: 780px; color: var(--muted); line-height: 1.55; }
+    .back-link { color: #dff7ff; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; background: rgba(255,255,255,0.03); }
+    .scene { position: relative; min-height: 760px; border-radius: 30px; overflow: hidden; background: radial-gradient(circle at 50% 40%, rgba(20, 37, 51, 0.72), rgba(5, 10, 17, 0.92)); border: 1px solid var(--line); }
+    .scene::before { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(107,220,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(107,220,255,0.03) 1px, transparent 1px); background-size: 42px 42px; opacity: .45; }
+    .blob { position: absolute; border-radius: 999px; filter: blur(38px); opacity: .52; animation: drift 18s infinite alternate ease-in-out; }
+    .blob.a { inset: 7% auto auto 6%; width: 32%; height: 28%; background: rgba(90, 255, 201, 0.18); }
+    .blob.b { inset: auto 10% 11% auto; width: 34%; height: 30%; background: rgba(117, 216, 255, 0.16); animation-duration: 22s; }
+    .blob.c { inset: 30% auto auto 36%; width: 26%; height: 32%; background: rgba(255, 191, 95, 0.12); animation-duration: 26s; }
+    svg { position: relative; z-index: 2; width: 100%; height: 760px; display: block; }
+    .label { fill: #eef8fc; font-size: 13px; }
+    .link { fill: none; stroke: rgba(121, 237, 255, 0.18); stroke-width: 1.8; }
+    .link.hot { stroke: rgba(121, 237, 255, 0.62); stroke-dasharray: 8 14; animation: stream 5s linear infinite; }
+    .node-core { animation: beat 2.6s infinite ease-in-out; }
+    .node-shell { fill: rgba(7, 18, 29, 0.86); stroke-width: 1.6; }
+    .node-halo { fill: none; stroke: rgba(121, 237, 255, 0.16); stroke-width: 1.2; }
+    .deploy-ring { fill: none; stroke: rgba(116, 216, 255, 0.88); stroke-width: 2; stroke-dasharray: 5 9; transform-origin: center; animation: spin 7s linear infinite; }
+    .scaling-particle { opacity: 0; animation: emit 2s infinite ease-out; }
+    .scaling-particle.p2 { animation-delay: 0.9s; }
+    .status-chip { fill: rgba(7, 18, 29, 0.84); stroke: rgba(121,237,255,.14); stroke-width: 1; }
+    .status-text { fill: #ddecf5; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+    @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    @keyframes stream { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -44; } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes emit { 0% { transform: translate(0,0) scale(.6); opacity: 0; } 20% { opacity: .95; } 100% { transform: translate(22px,-18px) scale(1); opacity: 0; } }
+    @keyframes drift { from { transform: translate(0,0); } to { transform: translate(18px,-14px); } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Aurora Field", "Services become bright buoys suspended in atmospheric computational weather. State reads through light quality, rings, and emissive behavior rather than hard containers."));</script>
+    <div class="scene">
+      <div class="blob a"></div><div class="blob b"></div><div class="blob c"></div>
+      <svg viewBox="0 0 1280 760" id="svg"></svg>
+    </div>
+  </div>
+  <script>
+    const positions = { edge:[194,170], auth:[434,218], api:[640,166], billing:[854,242], events:[540,428], worker:[848,480], profile:[1056,196], analytics:[1080,492] };
+    const svg = document.getElementById("svg");
+    const pathFrom = (a, b) => {
+      const [x1, y1] = positions[a]; const [x2, y2] = positions[b];
+      const midX = (x1 + x2) / 2; const lift = Math.abs(x2 - x1) * 0.08 + 28;
+      return `M ${x1} ${y1} C ${midX} ${y1 - lift}, ${midX} ${y2 + lift}, ${x2} ${y2}`;
+    };
+    BreadthVis.links.forEach(([from, to]) => {
+      const hot = from === "edge" || to === "edge";
+      svg.appendChild(BreadthVis.svg("path", { d: pathFrom(from, to), class: `link${hot ? " hot" : ""}` }));
+    });
+    BreadthVis.services.forEach((service) => {
+      const [x, y] = positions[service.id];
+      const accent = BreadthVis.serviceAccent(service);
+      const group = BreadthVis.svg("g", { transform: `translate(${x} ${y})` });
+      group.appendChild(BreadthVis.svg("circle", { r: 58, class: "node-halo" }));
+      group.appendChild(BreadthVis.svg("circle", { r: 42, class: "node-shell", stroke: accent }));
+      if (service.lifecycle === "deploying") {
+        group.appendChild(BreadthVis.svg("circle", { r: 68, class: "deploy-ring" }));
+      }
+      if (service.lifecycle === "scaling") {
+        group.appendChild(BreadthVis.svg("circle", { r: 52, fill: "none", stroke: "rgba(198,245,255,.82)", "stroke-width": "2" }));
+        group.appendChild(BreadthVis.svg("circle", { r: 5, class: "scaling-particle", fill: "rgba(198,245,255,.96)" }));
+        group.appendChild(BreadthVis.svg("circle", { r: 4, class: "scaling-particle p2", fill: "rgba(198,245,255,.82)" }));
+      }
+      group.appendChild(BreadthVis.svg("circle", { r: 16, class: "node-core", fill: accent }));
+      group.appendChild(BreadthVis.svg("text", { x: 70, y: -2, class: "label" })).textContent = service.label;
+      const chip = BreadthVis.svg("g", { transform: "translate(72 12)" });
+      chip.appendChild(BreadthVis.svg("rect", { width: 104, height: 22, rx: 11, class: "status-chip" }));
+      chip.appendChild(BreadthVis.svg("text", { x: 10, y: 15, class: "status-text" })).textContent = service.lifecycle === "stable" ? service.health : service.lifecycle;
+      group.appendChild(chip);
+      svg.appendChild(group);
+    });
+  </script>
+</body>
+</html>

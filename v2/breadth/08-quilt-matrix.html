@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quilt Matrix</title>
+  <script src="./shared.js"></script>
+  <style>
+    :root {
+      --bg: #07111a;
+      --line: rgba(116,216,255,.14);
+      --text: #eef7fb;
+      --muted: #9ab0bf;
+      --cyan: #74d8ff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: "IBM Plex Mono", Consolas, "SFMono-Regular", Menlo, monospace; color: var(--text); background: linear-gradient(180deg, #091521, #050c13); }
+    .shell { width: min(1340px, calc(100vw - 28px)); margin: 0 auto; padding: 22px 0 24px; }
+    .page-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+    .eyebrow { color: #7cdcff; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 6px 0 8px; font-size: clamp(2rem, 3vw, 3rem); }
+    p { margin: 0; max-width: 760px; color: var(--muted); line-height: 1.55; }
+    .back-link { color: #dff7ff; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; background: rgba(255,255,255,.03); }
+    .scene { position: relative; min-height: 780px; border-radius: 32px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(circle at top, rgba(116,216,255,.05), transparent 36%), linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)), #071019; }
+    svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .stitch-note { position: absolute; left: 18px; top: 18px; padding: 10px 12px; border-radius: 16px; background: rgba(7,17,26,.78); border: 1px solid rgba(116,216,255,.14); color: var(--muted); font-size: .8rem; z-index: 3; }
+    .thread { fill: none; stroke: rgba(116,216,255,.18); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2 12; animation: stitch 10s linear infinite; }
+    .thread.hot { stroke: rgba(116,216,255,.58); }
+    .matrix { position: absolute; inset: 102px 64px 76px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; align-content: center; }
+    .tile {
+      position: relative;
+      min-height: 142px;
+      padding: 18px 18px 20px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)), repeating-linear-gradient(45deg, rgba(255,255,255,.02) 0 10px, transparent 10px 20px), rgba(9, 20, 31, 0.92);
+      border: 1px solid rgba(116,216,255,.18);
+      box-shadow: 0 20px 28px rgba(0,0,0,.28);
+      overflow: hidden;
+    }
+    .tile::before { content: ""; position: absolute; inset: 8px; border-radius: 22px; border: 1px dashed rgba(255,255,255,.08); pointer-events: none; }
+    .tile::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 8px; background: color-mix(in srgb, var(--patch) 70%, transparent); }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .title { margin: 0; font-size: 1rem; }
+    .sub { margin-top: 8px; color: var(--muted); font-size: .8rem; line-height: 1.45; }
+    .swatch { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 14px currentColor; color: var(--patch); background: var(--patch); }
+    .domain-tag { display: inline-flex; align-items: center; min-height: 24px; margin-top: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(116,216,255,.12); background: rgba(255,255,255,.04); font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #dcecf4; }
+    .deploy-ring { position: absolute; right: 14px; top: 14px; width: 30px; height: 30px; border-radius: 50%; border: 2px dashed var(--cyan); animation: spin 8.6s linear infinite; }
+    .scale-seam { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 9px; border-radius: 999px; background: linear-gradient(90deg, rgba(214,247,255,.10), rgba(214,247,255,.92), rgba(214,247,255,.10)); animation: seam 2.3s infinite ease-in-out; }
+    .scale-seam::after { content: ""; position: absolute; right: 14px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #d8f7ff; box-shadow: 0 0 12px rgba(216,247,255,.20); animation: seamDot 2.3s infinite ease-in-out; }
+    .fray { position: absolute; right: 12px; top: 16px; bottom: 16px; width: 16px; background: repeating-linear-gradient(180deg, rgba(255,191,95,.72) 0 8px, transparent 8px 16px); opacity: .72; }
+    .critical-cut { position: absolute; inset: 0; background: linear-gradient(140deg, transparent 45%, rgba(255,93,103,.30) 49%, transparent 52%); pointer-events: none; }
+    @keyframes stitch { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -92; } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes seam { 0%,100% { transform: scaleX(.94); opacity: .52; } 50% { transform: scaleX(1.04); opacity: 1; } }
+    @keyframes seamDot { 0%,100% { transform: translateX(-8px); } 50% { transform: translateX(8px); } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Quilt Matrix", "A more tactile textile pass: patch accents, embroidery threads, seam states, and fabric-like surfaces. This should feel like a designed system quilt rather than cards on a page."));</script>
+    <div class="scene">
+      <div class="stitch-note">Embroidery threads show dependencies; patch seams show service behavior.</div>
+      <svg viewBox="0 0 1280 780" id="threads"></svg>
+      <div class="matrix" id="matrix"></div>
+    </div>
+  </div>
+  <script>
+    const order = ["edge", "auth", "api", "profile", "billing", "events", "worker", "analytics"];
+    const coords = {
+      edge:[190,194], auth:[490,194], api:[792,194], profile:[1096,194],
+      billing:[190,472], events:[490,472], worker:[792,472], analytics:[1096,472]
+    };
+    const threads = document.getElementById("threads");
+    BreadthVis.links.forEach(([a, b]) => {
+      const [x1, y1] = coords[a];
+      const [x2, y2] = coords[b];
+      const hot = a === "edge" || b === "edge";
+      threads.appendChild(BreadthVis.svg("path", { d: `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1 - 24}, ${(x1 + x2) / 2} ${y2 + 24}, ${x2} ${y2}`, class: `thread${hot ? " hot" : ""}` }));
+    });
+    const matrix = document.getElementById("matrix");
+    order.forEach((id) => {
+      const service = BreadthVis.serviceMap[id];
+      const tile = document.createElement("article");
+      tile.className = `tile ${service.health} ${service.lifecycle}`;
+      tile.style.setProperty("--patch", BreadthVis.serviceAccent(service));
+      tile.innerHTML = `
+        <div class="row">
+          <h2 class="title">${service.label}</h2>
+          <div class="swatch"></div>
+        </div>
+        <div class="domain-tag">${service.domain}</div>
+        <div class="sub">${service.health} / ${service.lifecycle}</div>
+        ${service.lifecycle === "deploying" ? `<div class="deploy-ring"></div>` : ``}
+        ${service.lifecycle === "scaling" ? `<div class="scale-seam"></div>` : ``}
+        ${service.health === "degraded" ? `<div class="fray"></div>` : ``}
+        ${service.health === "critical" ? `<div class="critical-cut"></div>` : ``}
+      `;
+      matrix.appendChild(tile);
+    });
+  </script>
+</body>
+</html>

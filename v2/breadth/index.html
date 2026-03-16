@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Breadth Exploration</title>
+  <style>
+    :root {
+      --bg: #07111b;
+      --panel: rgba(10, 20, 31, 0.82);
+      --line: rgba(110, 206, 255, 0.12);
+      --text: #edf6fb;
+      --muted: #90a8ba;
+      --accent: #74d8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      background:
+        radial-gradient(circle at top, rgba(66, 145, 202, 0.12), transparent 40%),
+        linear-gradient(180deg, #0b1624, var(--bg));
+      color: var(--text);
+    }
+    .shell {
+      width: min(1320px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(2rem, 3vw, 3rem); }
+    p { margin: 0; color: var(--muted); line-height: 1.55; max-width: 820px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .featured {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(11, 30, 43, 0.96), rgba(12, 20, 31, 0.9));
+      border: 1px solid rgba(116, 216, 255, 0.22);
+      box-shadow: 0 24px 54px rgba(0, 0, 0, 0.26);
+      text-decoration: none;
+      color: inherit;
+      margin-top: 24px;
+    }
+    .featured strong {
+      font-size: 1.2rem;
+      letter-spacing: -0.02em;
+    }
+    .featured .meta {
+      display: inline-flex;
+      width: fit-content;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      color: #d9faff;
+      background: rgba(6, 18, 28, 0.56);
+      border: 1px solid rgba(121, 237, 255, 0.16);
+    }
+    .card {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 22px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      text-decoration: none;
+      color: inherit;
+      min-height: 170px;
+      transition: transform 160ms ease, border-color 160ms ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(116, 216, 255, 0.28);
+    }
+    .eyebrow { color: var(--accent); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    h2 { margin: 0; font-size: 1.12rem; }
+    .thumb {
+      height: 76px;
+      border-radius: 16px;
+      border: 1px solid rgba(116, 216, 255, 0.12);
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    svg { width: 100%; height: 100%; display: block; }
+    @media (max-width: 920px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="eyebrow">Breadth Exploration</div>
+    <h1>16 Service Visualization Directions</h1>
+    <p>These are intentionally broad, stylistically different prototypes. They reuse the same abstract service story, but each explores a different visual metaphor, composition strategy, and animation grammar.</p>
+    <a class="featured" href="./16-future-table-terminal-deck.html">
+      <span class="meta">Featured Direction</span>
+      <strong>Future Table / Terminal Deck</strong>
+      <p>The strongest table-based direction so far: domain sub-tables, world-release awareness, Cloud Run vs GKE, scaling indicators, rollback state, and the constellation-style service panel.</p>
+    </a>
+    <div class="grid" id="grid"></div>
+  </div>
+  <script>
+    const prototypes = [
+      ["01-aurora-field.html", "Aurora Field", "Services as luminous buoys inside atmospheric fields."],
+      ["02-metro-map.html", "Metro Map", "Services as transit stations on animated release lines."],
+      ["03-radar-command.html", "Radar Command", "Services as blips inside a rotating command sweep."],
+      ["04-circuit-board.html", "Circuit Board", "Services as chips on energized board traces."],
+      ["05-topographic-islands.html", "Topographic Islands", "Services as peaks with contour shells and ripples."],
+      ["06-ribbon-river.html", "Ribbon River", "Services riding braided flow bands and current ribbons."],
+      ["07-tower-skyline.html", "Tower Skyline", "Services as vertical towers with beaconed state signals."],
+      ["08-quilt-matrix.html", "Quilt Matrix", "Services as stitched tiles and embroidered dependency threads."],
+      ["09-signal-garden.html", "Signal Garden", "Services as living stems and blossoms over root links."],
+      ["10-wave-chamber.html", "Wave Chamber", "Services as buoys inside a kinetic standing-wave chamber."],
+      ["11-future-table.html", "Future Table", "Services in a live animated table from the near future."],
+      ["12-future-table-domain-stacks.html", "Future Table / Domain Stacks", "Five domain sub-tables stacked into one operational surface."],
+      ["13-future-table-glass-ledgers.html", "Future Table / Glass Ledgers", "Floating domain ledgers with a premium control-room feel."],
+      ["14-future-table-signal-rails.html", "Future Table / Signal Rails", "Horizontal domain rails with dense left-to-right scan."],
+      ["15-future-table-atlas-board.html", "Future Table / Atlas Board", "An asymmetric board of domain cabinets and dense service ledgers."],
+      ["16-future-table-terminal-deck.html", "Future Table / Terminal Deck", "A sharper near-future console built from grouped domain tables."]
+    ];
+
+    function thumbSvg(index) {
+      const colors = ["#67f3c4", "#74d8ff", "#ffbf5f", "#ff5d67"];
+      const circles = Array.from({ length: 6 }).map((_, i) => {
+        const x = 18 + i * 12 + (index % 2 ? 6 : 0);
+        const y = 16 + (i % 3) * 18;
+        const color = colors[(i + index) % colors.length];
+        return `<circle cx="${x}" cy="${y}" r="${i % 2 ? 5 : 7}" fill="${color}" fill-opacity="0.8" />`;
+      }).join("");
+      return `
+        <svg viewBox="0 0 120 76" xmlns="http://www.w3.org/2000/svg">
+          <rect width="120" height="76" fill="#08131d"/>
+          <path d="M6 60 C 28 ${20 + index * 2}, 54 ${62 - index * 3}, 114 14" stroke="rgba(116,216,255,.22)" fill="none" stroke-width="2"/>
+          ${circles}
+        </svg>
+      `;
+    }
+
+    document.getElementById("grid").innerHTML = prototypes.map((item, index) => `
+      <a class="card" href="./${item[0]}">
+        <div class="eyebrow">${String(index + 1).padStart(2, "0")}</div>
+        <h2>${item[1]}</h2>
+        <p>${item[2]}</p>
+        <div class="thumb">${thumbSvg(index)}</div>
+      </a>
+    `).join("");
+  </script>
+</body>
+</html>

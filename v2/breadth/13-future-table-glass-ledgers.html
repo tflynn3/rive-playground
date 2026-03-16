@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Future Table / Glass Ledgers</title>
+  <script src="./shared.js"></script>
+  <script src="./future-table-shared.js"></script>
+  <link rel="stylesheet" href="./future-table-shared.css">
+  <style>
+    .canvas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-content: start;
+    }
+    .domain-ledger {
+      position: relative;
+      border-radius: 30px;
+      overflow: hidden;
+      border: 1px solid rgba(116, 216, 255, 0.14);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+        rgba(8, 18, 28, 0.72);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 24px 42px rgba(0, 0, 0, 0.3);
+    }
+    .domain-ledger.core-span {
+      grid-column: 1 / -1;
+    }
+    .domain-ledger::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, color-mix(in srgb, var(--domain-color) 14%, transparent), transparent 40%);
+      pointer-events: none;
+    }
+    .domain-ledger .domain-head {
+      padding-bottom: 18px;
+    }
+    .domain-ledger .service-table {
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+    .domain-ledger .service-row {
+      min-height: 68px;
+    }
+    .domain-ledger .table-header,
+    .domain-ledger .service-row {
+      grid-template-columns: minmax(200px, 2fr) 108px 112px 98px 104px 120px 146px;
+    }
+    @media (max-width: 1120px) {
+      .canvas { grid-template-columns: 1fr; }
+      .domain-ledger.core-span { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Future Table / Glass Ledgers", "Floating domain cabinets with translucent shells and dense ledgers inside. This version pushes the table toward a premium control-room surface."));</script>
+    <div class="scene">
+      <div class="summary"></div>
+      <div class="scene-note">The core domain spans full width to emphasize orchestration gravity. Every domain still stays a proper sub-table.</div>
+      <div class="canvas" id="canvas"></div>
+    </div>
+  </div>
+  <script>
+    const scene = document.querySelector(".scene");
+    scene.querySelector(".summary").innerHTML = FutureTableLab.summaryCards("glass ledgers");
+    scene.insertAdjacentHTML("beforeend", FutureTableLab.focusPanelMarkup());
+
+    const canvas = document.getElementById("canvas");
+    canvas.innerHTML = FutureTableLab.groupedDomains.map((domain) => `
+      <section class="domain-ledger${domain.id === "core" ? " core-span" : ""}" style="--domain-color:${domain.color}">
+        <div class="domain-head">
+          <div class="domain-title">
+            <h2>${domain.label}</h2>
+            <p>${domain.note}</p>
+          </div>
+          ${FutureTableLab.domainHeaderMeta(domain)}
+        </div>
+        <div class="service-table">
+          ${FutureTableLab.tableHeaderMarkup()}
+          ${domain.services.map((service) => FutureTableLab.serviceRowMarkup(service)).join("")}
+        </div>
+      </section>
+    `).join("");
+
+    FutureTableLab.attachPanel(scene);
+  </script>
+</body>
+</html>

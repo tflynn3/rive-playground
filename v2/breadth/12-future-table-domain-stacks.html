@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Future Table / Domain Stacks</title>
+  <script src="./shared.js"></script>
+  <script src="./future-table-shared.js"></script>
+  <link rel="stylesheet" href="./future-table-shared.css">
+  <style>
+    .canvas {
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+    .domain-stack {
+      position: relative;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(116, 216, 255, 0.12);
+      background: rgba(6, 16, 24, 0.84);
+      box-shadow: 0 24px 36px rgba(0, 0, 0, 0.28);
+    }
+    .domain-stack::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 8px;
+      background: var(--domain-color);
+      opacity: 0.78;
+    }
+    .domain-stack .domain-head {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+      border-bottom: 1px solid rgba(116, 216, 255, 0.1);
+      padding-left: 22px;
+    }
+    .domain-stack .service-table {
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+    .service-row::after {
+      content: "";
+      position: absolute;
+      inset: auto 16px 0 16px;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(116, 216, 255, 0.16), transparent);
+    }
+    .service-row:last-child::after {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Future Table / Domain Stacks", "Five stacked domain sub-tables with one shared world release artifact. This is the cleanest operational interpretation of the future-table direction."));</script>
+    <div class="scene">
+      <div class="summary"></div>
+      <div class="scene-note">Each domain owns its own ledger. Click any service row to open the same right-side service panel used in the constellation view.</div>
+      <div class="canvas" id="canvas"></div>
+    </div>
+  </div>
+  <script>
+    const scene = document.querySelector(".scene");
+    scene.querySelector(".summary").innerHTML = FutureTableLab.summaryCards("domain stacks");
+    scene.insertAdjacentHTML("beforeend", FutureTableLab.focusPanelMarkup());
+
+    const canvas = document.getElementById("canvas");
+    canvas.innerHTML = FutureTableLab.groupedDomains.map((domain) => `
+      <section class="domain-stack" style="--domain-color:${domain.color}">
+        <div class="domain-head">
+          <div class="domain-title">
+            <h2>${domain.label}</h2>
+            <p>${domain.note}</p>
+          </div>
+          ${FutureTableLab.domainHeaderMeta(domain)}
+        </div>
+        <div class="service-table">
+          ${FutureTableLab.tableHeaderMarkup()}
+          ${domain.services.map((service) => FutureTableLab.serviceRowMarkup(service)).join("")}
+        </div>
+      </section>
+    `).join("");
+
+    FutureTableLab.attachPanel(scene);
+  </script>
+</body>
+</html>

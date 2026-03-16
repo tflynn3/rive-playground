@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rive Playground V2</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg0: #071018;
+      --bg1: #0f2230;
+      --ink: #e4f5f0;
+      --muted: #88a7b6;
+      --card: rgba(10, 22, 32, 0.84);
+      --border: rgba(113, 203, 236, 0.14);
+      font-family: Bahnschrift, "Aptos", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 20% 14%, rgba(107, 220, 255, 0.10), transparent 24%),
+        radial-gradient(circle at 82% 10%, rgba(127, 240, 213, 0.12), transparent 22%),
+        linear-gradient(160deg, var(--bg0), var(--bg1));
+    }
+
+    .shell {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: rgba(107, 220, 255, 0.10);
+      border: 1px solid rgba(107, 220, 255, 0.20);
+    }
+
+    h1 {
+      margin: 14px 0 10px;
+      font-size: clamp(2.4rem, 4vw, 4.4rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      max-width: 10ch;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 72ch;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .card {
+      display: grid;
+      gap: 10px;
+      padding: 18px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(14, 31, 44, 0.92), var(--card));
+      border: 1px solid var(--border);
+      box-shadow: 0 26px 80px rgba(0, 0, 0, 0.36);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card strong {
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .meta {
+      display: inline-flex;
+      width: fit-content;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      color: #d9faff;
+      background: rgba(6, 18, 28, 0.56);
+      border: 1px solid rgba(121, 237, 255, 0.16);
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <span class="eyebrow">Rive Playground / V2</span>
+    <h1>Optimized artifact set.</h1>
+    <p>Use the adaptive artifact as the integration target. The other pages stay available as supporting explorations and stress-validation tools, all grouped under the lighter v2 presentation model. The strongest current experimental UI direction is the future-table terminal deck.</p>
+
+    <section class="grid">
+      <a class="card" href="./breadth/16-future-table-terminal-deck.html">
+        <span class="meta">Featured Exploration</span>
+        <strong>Future Table / Terminal Deck</strong>
+        <p>Focused table-based service console with domain sub-tables, rollout states, Cloud Run vs GKE, and a right-side detail panel.</p>
+      </a>
+      <a class="card" href="./core-gravity-adaptive-artifact.html">
+        <span class="meta">Canonical</span>
+        <strong>Core Gravity Adaptive Artifact</strong>
+        <p>Reusable integration target with adaptive layout, zoom, disclosure, and performance-aware behavior.</p>
+      </a>
+      <a class="card" href="./core-gravity-dynamic-test.html">
+        <span class="meta">Stress Harness</span>
+        <strong>Core Gravity Dynamic Test</strong>
+        <p>Mutation-focused harness for adding random services and domains while validating spacing and performance.</p>
+      </a>
+      <a class="card" href="./domain-constellation-exploration.html">
+        <span class="meta">Domain Layout</span>
+        <strong>Domain Constellation Exploration</strong>
+        <p>Finalized core-gravity direction for domain-based grouping and progressive disclosure.</p>
+      </a>
+      <a class="card" href="./multi-service-exploration.html">
+        <span class="meta">Comparisons</span>
+        <strong>Multi-Service Exploration</strong>
+        <p>Optimized comparison page for multiple mesh compositions using the shared node language.</p>
+      </a>
+      <a class="card" href="./service-cell-exploration.html">
+        <span class="meta">Node Study</span>
+        <strong>Service Cell Exploration</strong>
+        <p>Single-node artifact for the optimized service-cell visual language and interaction model.</p>
+      </a>
+    </section>
+  </main>
+</body>
+</html>

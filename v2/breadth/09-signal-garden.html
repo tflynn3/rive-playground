@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal Garden</title>
+  <script src="./shared.js"></script>
+  <style>
+    :root { --bg:#07111a; --line:rgba(116,216,255,.14); --text:#eef7fb; --muted:#9ab0bf; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family: Consolas, "SFMono-Regular", Menlo, monospace; color:var(--text); background: linear-gradient(180deg, #091521, #050c13); }
+    .shell { width:min(1320px, calc(100vw - 28px)); margin:0 auto; padding:22px 0 24px; }
+    .page-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:18px; }
+    .eyebrow { color:#7cdcff; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:6px 0 8px; font-size:clamp(2rem, 3vw, 3rem); }
+    p { margin:0; max-width:760px; color:var(--muted); line-height:1.55; }
+    .back-link { color:#dff7ff; text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:10px 14px; background:rgba(255,255,255,.03); }
+    .scene { position:relative; min-height:760px; border-radius:30px; overflow:hidden; border:1px solid var(--line); background: linear-gradient(180deg, rgba(116,216,255,.05), transparent 26%), radial-gradient(circle at bottom, rgba(94, 255, 201, 0.08), transparent 36%), #061019; }
+    svg { position:absolute; inset:0; width:100%; height:100%; }
+    .root { fill:none; stroke:rgba(116,216,255,.14); stroke-width:3; stroke-dasharray:8 14; animation: creep 10s linear infinite; }
+    .garden { position:absolute; inset:0; }
+    .plant { position:absolute; width:180px; height:320px; transform-origin: bottom center; animation: sway 7s infinite ease-in-out; }
+    .stem { position:absolute; left:50%; bottom:0; width:6px; height:220px; margin-left:-3px; border-radius:999px; background: linear-gradient(180deg, rgba(94,255,201,.16), rgba(94,255,201,.74)); }
+    .flower { position:absolute; left:50%; top:34px; width:96px; height:96px; margin-left:-48px; border-radius:50%; background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.96), var(--accent) 40%, rgba(255,255,255,.02) 74%); box-shadow:0 0 24px var(--accent); }
+    .label { position:absolute; left:50%; top:142px; transform:translateX(-50%); white-space:nowrap; font-size:12px; color:#eff8fc; }
+    .deploy { position:absolute; inset:18px; border-radius:50%; border:2px dashed #74d8ff; animation: spin 8s linear infinite; }
+    .seed { position:absolute; left:50%; top:78px; width:6px; height:6px; margin-left:-3px; border-radius:50%; background:#d7f8ff; box-shadow:0 0 12px rgba(215,248,255,.22); opacity:0; }
+    .seed.a { animation: seed 1.9s infinite ease-out; } .seed.b { animation: seed 1.9s .95s infinite ease-out; }
+    .critical .flower { box-shadow:0 0 24px #ff5d67; filter:saturate(.8); }
+    .critical .stem { background: linear-gradient(180deg, rgba(255,93,103,.18), rgba(255,93,103,.74)); }
+    @keyframes creep { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -56; } }
+    @keyframes sway { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+    @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    @keyframes seed { 0% { transform: translate(0,0) scale(.7); opacity:0; } 20% { opacity:.96; } 100% { transform: translate(26px,-18px) scale(1); opacity:0; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Signal Garden", "Services become stems, blossoms, and roots. This is intentionally biological and expressive, leaning into growth, bloom, wilt, and seed spread."));</script>
+    <div class="scene">
+      <svg viewBox="0 0 1280 760" id="roots"></svg>
+      <div class="garden" id="garden"></div>
+    </div>
+  </div>
+  <script>
+    const pos = { edge:[118,340], auth:[294,394], api:[490,300], billing:[692,342], events:[872,422], worker:[1050,390], profile:[934,246], analytics:[1164,280] };
+    const roots = document.getElementById("roots");
+    BreadthVis.links.forEach(([a, b]) => {
+      const [x1] = pos[a]; const [x2] = pos[b];
+      roots.appendChild(BreadthVis.svg("path", { d: `M ${x1 + 90} 640 C ${(x1 + x2) / 2} 690, ${(x1 + x2) / 2} 690, ${x2 + 90} 640`, class: "root" }));
+    });
+    const garden = document.getElementById("garden");
+    Object.entries(pos).forEach(([id, [x, top]]) => {
+      const service = BreadthVis.serviceMap[id];
+      const plant = document.createElement("div");
+      plant.className = `plant ${service.health} ${service.lifecycle}`;
+      plant.style.left = `${x}px`;
+      plant.style.top = `${top}px`;
+      plant.style.setProperty("--accent", BreadthVis.serviceAccent(service));
+      plant.innerHTML = `
+        <div class="stem"></div>
+        <div class="flower">${service.lifecycle === "deploying" ? `<div class="deploy"></div>` : ``}</div>
+        ${service.lifecycle === "scaling" ? `<div class="seed a"></div><div class="seed b"></div>` : ``}
+        <div class="label">${service.label}</div>
+      `;
+      garden.appendChild(plant);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wave Chamber</title>
+  <script src="./shared.js"></script>
+  <style>
+    :root { --bg:#061019; --line:rgba(116,216,255,.14); --text:#eef7fb; --muted:#9ab0bf; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family: Consolas, "SFMono-Regular", Menlo, monospace; color:var(--text); background: linear-gradient(180deg, #091521, #050c13); }
+    .shell { width:min(1320px, calc(100vw - 28px)); margin:0 auto; padding:22px 0 24px; }
+    .page-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:18px; }
+    .eyebrow { color:#7cdcff; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:6px 0 8px; font-size:clamp(2rem, 3vw, 3rem); }
+    p { margin:0; max-width:760px; color:var(--muted); line-height:1.55; }
+    .back-link { color:#dff7ff; text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:10px 14px; background:rgba(255,255,255,.03); }
+    .scene { position:relative; min-height:760px; border-radius:30px; overflow:hidden; border:1px solid var(--line); background: radial-gradient(circle at top, rgba(116,216,255,.05), transparent 32%), #061019; }
+    svg { width:100%; height:760px; display:block; }
+    .wave { fill:none; stroke-width:2.2; opacity:.42; animation: slide 12s linear infinite; }
+    .wave.fast { animation-duration: 7.5s; }
+    .buoy { fill:#07111a; stroke-width:2; }
+    .core { animation: bob 2.6s infinite ease-in-out; }
+    .deploy-ring { fill:none; stroke:#74d8ff; stroke-width:2; stroke-dasharray:4 8; animation: spin 8s linear infinite; transform-origin:center; }
+    .scale-spray { fill:#d7f8ff; opacity:0; animation: spray 1.8s infinite ease-out; }
+    .scale-spray.b { animation-delay:.9s; }
+    .label { fill:#eef7fb; font-size:13px; }
+    @keyframes slide { from { transform: translateX(-34px); } to { transform: translateX(34px); } }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes spray { 0% { transform: translate(0,0) scale(.74); opacity:0; } 20% { opacity:.95; } 100% { transform: translate(24px,-22px) scale(1); opacity:0; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Wave Chamber", "Services float inside standing telemetry waves. This explores a more acoustic and signal-processing metaphor where the space itself vibrates around the system."));</script>
+    <div class="scene"><svg viewBox="0 0 1280 760" id="svg"></svg></div>
+  </div>
+  <script>
+    const svg = document.getElementById("svg");
+    for (let index = 0; index < 9; index += 1) {
+      const y = 110 + index * 58;
+      const amplitude = 22 + (index % 3) * 10;
+      let d = `M -40 ${y}`;
+      for (let x = -40; x <= 1320; x += 70) {
+        const pointY = y + Math.sin((x / 110) + index) * amplitude;
+        d += ` L ${x} ${pointY}`;
+      }
+      svg.appendChild(BreadthVis.svg("path", { d, class: `wave${index % 2 ? " fast" : ""}`, stroke: index % 3 === 0 ? "rgba(108,244,199,.34)" : "rgba(116,216,255,.30)" }));
+    }
+    const pos = { edge:[144,166], auth:[340,248], api:[584,190], billing:[836,276], events:[628,470], worker:[888,456], profile:[1032,182], analytics:[1058,538] };
+    BreadthVis.links.forEach(([a, b]) => {
+      const [x1, y1] = pos[a]; const [x2, y2] = pos[b];
+      svg.appendChild(BreadthVis.svg("path", { d: `M ${x1} ${y1} Q ${(x1 + x2) / 2} ${(y1 + y2) / 2 - 30}, ${x2} ${y2}`, stroke: "rgba(116,216,255,.16)", "stroke-width": "1.5", fill: "none" }));
+    });
+    BreadthVis.services.forEach((service) => {
+      const [x, y] = pos[service.id];
+      const accent = BreadthVis.serviceAccent(service);
+      const g = BreadthVis.svg("g", { transform: `translate(${x} ${y})` });
+      if (service.lifecycle === "deploying") g.appendChild(BreadthVis.svg("circle", { r: 28, class: "deploy-ring" }));
+      if (service.lifecycle === "scaling") {
+        g.appendChild(BreadthVis.svg("circle", { r: 26, fill: "none", stroke: "#d7f8ff", "stroke-width": "2.5" }));
+        g.appendChild(BreadthVis.svg("circle", { r: 4, class: "scale-spray", fill: "#d7f8ff" }));
+        g.appendChild(BreadthVis.svg("circle", { r: 3.5, class: "scale-spray b", fill: "#d7f8ff" }));
+      }
+      g.appendChild(BreadthVis.svg("circle", { r: 18, class: "buoy", stroke: accent }));
+      g.appendChild(BreadthVis.svg("circle", { r: 9, class: "core", fill: accent }));
+      g.appendChild(BreadthVis.svg("text", { x: 28, y: 4, class: "label" })).textContent = service.label;
+      svg.appendChild(g);
+    });
+  </script>
+</body>
+</html>

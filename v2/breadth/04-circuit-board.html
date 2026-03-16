@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Circuit Board</title>
+  <script src="./shared.js"></script>
+  <style>
+    :root {
+      --bg: #051018;
+      --board: #0a1b1c;
+      --copper: #66f6c7;
+      --cyan: #74d8ff;
+      --line: rgba(116,216,255,.14);
+      --text: #eef7fb;
+      --muted: #97adbb;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: "IBM Plex Mono", Consolas, "SFMono-Regular", Menlo, monospace; color: var(--text); background: linear-gradient(180deg, #08131d, var(--bg)); }
+    .shell { width: min(1340px, calc(100vw - 28px)); margin: 0 auto; padding: 22px 0 24px; }
+    .page-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+    .eyebrow { color: #7cdcff; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 6px 0 8px; font-size: clamp(2rem, 3vw, 3rem); }
+    p { margin: 0; max-width: 760px; color: var(--muted); line-height: 1.55; }
+    .back-link { color: #dff7ff; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; background: rgba(255,255,255,.03); }
+    .scene { position: relative; min-height: 780px; border-radius: 32px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(circle at top, rgba(116,216,255,.05), transparent 36%), linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.12)), var(--board); }
+    .scene::before { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(116,216,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(116,216,255,.03) 1px, transparent 1px); background-size: 40px 40px; opacity: .34; }
+    .board-note { position: absolute; left: 18px; top: 18px; padding: 10px 12px; border-radius: 16px; background: rgba(7,17,26,.78); border: 1px solid rgba(116,216,255,.14); color: var(--muted); font-size: .8rem; z-index: 3; }
+    svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .trace { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .trace.base { stroke: rgba(102,246,199,.18); stroke-width: 12; }
+    .trace.core { stroke: rgba(102,246,199,.52); stroke-width: 5; }
+    .trace.hot { stroke: rgba(116,216,255,.84); stroke-width: 3; stroke-dasharray: 12 18; animation: flow 4.8s linear infinite; }
+    .via { fill: rgba(116,216,255,.22); }
+    .trace-label { fill: rgba(214,247,255,.48); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+    .chips { position: absolute; inset: 0; }
+    .chip { position: absolute; width: 176px; padding: 16px 16px 18px; border-radius: 24px; background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)), rgba(7,17,27,.94); border: 1px solid rgba(116,216,255,.18); box-shadow: 0 24px 34px rgba(0,0,0,.34); overflow: hidden; }
+    .chip::before { content: ""; position: absolute; inset: 8px; border-radius: 18px; border: 1px solid rgba(255,255,255,.06); pointer-events: none; }
+    .chip.large { width: 196px; }
+    .chip-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .chip-title { font-size: .96rem; margin: 0 0 6px; }
+    .chip-sub { font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .chip-led { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 16px currentColor; animation: led 2.6s infinite ease-in-out; flex: 0 0 auto; }
+    .chip-readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; margin-top: 14px; font-size: .72rem; color: #dcecf4; }
+    .chip-readout strong { display: block; font-size: .9rem; color: #eff8fc; margin-top: 2px; }
+    .pins { position: absolute; inset: 0; pointer-events: none; }
+    .pins::before, .pins::after { content: ""; position: absolute; left: -14px; right: -14px; top: 20px; bottom: 20px; background: repeating-linear-gradient(90deg, transparent 0 20px, rgba(116,216,255,.08) 20px 28px, transparent 28px 46px); mask: linear-gradient(90deg, transparent 0 10px, black 10px calc(100% - 10px), transparent calc(100% - 10px)); opacity: .6; }
+    .pins::after { transform: rotate(90deg); }
+    .deploy-spinner { position: absolute; right: 14px; top: 14px; width: 28px; height: 28px; border-radius: 50%; border: 2px dashed var(--cyan); animation: spin 7.4s linear infinite; }
+    .scale-emit { position: absolute; left: 50%; top: 76px; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #d8f7ff; box-shadow: 0 0 12px rgba(216,247,255,.22); opacity: 0; }
+    .scale-emit.e1 { animation: emit 1.9s infinite ease-out; }
+    .scale-emit.e2 { animation: emit 1.9s .95s infinite ease-out; }
+    .domain-tag { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; margin-top: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.04); border: 1px solid rgba(116,216,255,.12); font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #d8ebf4; }
+    .chip.degraded { border-color: rgba(255,191,95,.28); box-shadow: 0 0 0 1px rgba(255,191,95,.10), 0 24px 34px rgba(0,0,0,.34); }
+    .chip.critical { border-color: rgba(255,93,103,.38); box-shadow: 0 0 0 1px rgba(255,93,103,.16), 0 24px 34px rgba(0,0,0,.36); }
+    .chip.critical::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 44%, rgba(255,93,103,.28) 49%, transparent 52%); pointer-events: none; }
+    @keyframes flow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -56; } }
+    @keyframes led { 0%,100% { transform: scale(1); } 50% { transform: scale(1.16); } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes emit { 0% { transform: translate(0,0) scale(.72); opacity: 0; } 18% { opacity: .96; } 100% { transform: translate(28px,-16px) scale(1); opacity: 0; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Circuit Board", "A more intentional board treatment: copper traces, vias, chip readouts, and board-layer framing. It should feel like a real system board, not boxes placed on top of lines."));</script>
+    <div class="scene">
+      <div class="board-note">Layer Alpha / active release path highlighted in blue signal current</div>
+      <svg viewBox="0 0 1280 780" id="traces"></svg>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+  <script>
+    const pos = { edge:[96,106], auth:[344,218], api:[606,116], billing:[846,242], events:[542,452], worker:[894,454], profile:[1038,136], analytics:[1038,546] };
+    const metrics = {
+      edge:{ latency:"21 ms", traffic:"320 rps" }, auth:{ latency:"34 ms", traffic:"88 rps" }, api:{ latency:"28 ms", traffic:"214 rps" }, billing:{ latency:"42 ms", traffic:"104 rps" },
+      events:{ latency:"18 ms", traffic:"410 rps" }, worker:{ latency:"26 ms", traffic:"156 rps" }, profile:{ latency:"64 ms", traffic:"72 rps" }, analytics:{ latency:"48 ms", traffic:"92 rps" }
+    };
+    const traces = document.getElementById("traces");
+    BreadthVis.links.forEach(([a, b]) => {
+      const [x1, y1] = pos[a];
+      const [x2, y2] = pos[b];
+      const mx = (x1 + x2) / 2;
+      const d = `M ${x1 + 88} ${y1 + 64} L ${mx} ${y1 + 64} L ${mx} ${y2 + 64} L ${x2 + 88} ${y2 + 64}`;
+      traces.appendChild(BreadthVis.svg("path", { d, class: "trace base" }));
+      traces.appendChild(BreadthVis.svg("path", { d, class: "trace core" }));
+      if (a === "edge" || b === "edge") traces.appendChild(BreadthVis.svg("path", { d, class: "trace hot" }));
+      [[x1 + 88, y1 + 64], [mx, y1 + 64], [mx, y2 + 64], [x2 + 88, y2 + 64]].forEach(([vx, vy]) => traces.appendChild(BreadthVis.svg("circle", { cx: vx, cy: vy, r: 5, class: "via" })));
+    });
+    [["EDGE BUS", 126, 82], ["CORE BUS", 624, 82], ["DATA BUS", 1038, 88]].forEach(([label, x, y]) => {
+      const text = BreadthVis.svg("text", { x, y, class: "trace-label" });
+      text.textContent = label;
+      traces.appendChild(text);
+    });
+    const chips = document.getElementById("chips");
+    BreadthVis.services.forEach((service) => {
+      const [x, y] = pos[service.id];
+      const chip = document.createElement("article");
+      chip.className = `chip ${service.lifecycle} ${service.health}${service.id === "api" ? " large" : ""}`;
+      chip.style.left = `${x}px`;
+      chip.style.top = `${y}px`;
+      chip.innerHTML = `
+        <div class="pins"></div>
+        <div class="chip-header">
+          <div>
+            <div class="chip-title">${service.label}</div>
+            <div class="chip-sub">${service.health} / ${service.lifecycle}</div>
+          </div>
+          <div class="chip-led" style="color:${BreadthVis.serviceAccent(service)}; background:${BreadthVis.serviceAccent(service)};"></div>
+        </div>
+        <div class="domain-tag">${service.domain}</div>
+        <div class="chip-readout">
+          <div>Latency<strong>${metrics[service.id].latency}</strong></div>
+          <div>Traffic<strong>${metrics[service.id].traffic}</strong></div>
+        </div>
+        ${service.lifecycle === "deploying" ? `<div class="deploy-spinner"></div>` : ``}
+        ${service.lifecycle === "scaling" ? `<div class="scale-emit e1"></div><div class="scale-emit e2"></div>` : ``}
+      `;
+      chips.appendChild(chip);
+    });
+  </script>
+</body>
+</html>

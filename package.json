@@ -1,0 +1,8 @@
+{
+  "name": "rive-playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "scale:test": "node ./scripts/run-scale-benchmark.mjs"
+  }
+}

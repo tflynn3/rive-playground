@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Future Table / Terminal Deck</title>
+  <script src="./shared.js"></script>
+  <script src="./future-table-shared.js"></script>
+  <link rel="stylesheet" href="./future-table-shared.css">
+  <style>
+    body {
+      background:
+        radial-gradient(circle at top, rgba(116, 216, 255, 0.06), transparent 28%),
+        linear-gradient(180deg, #08111a, #040a11);
+    }
+    .scene {
+      background:
+        linear-gradient(rgba(116, 216, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(116, 216, 255, 0.04) 1px, transparent 1px),
+        #050d15;
+      background-size: 32px 32px, 32px 32px, auto;
+    }
+    .canvas {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+    .terminal-domain {
+      position: relative;
+      padding: 14px;
+      border-radius: 26px;
+      border: 1px solid rgba(116, 216, 255, 0.12);
+      background: rgba(4, 10, 16, 0.88);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 18px 32px rgba(0, 0, 0, 0.28);
+    }
+    .terminal-domain::before,
+    .terminal-domain::after {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 1px solid color-mix(in srgb, var(--domain-color) 60%, rgba(116, 216, 255, 0.16));
+      opacity: 0.6;
+    }
+    .terminal-domain::before {
+      left: 12px;
+      top: 12px;
+      border-right: 0;
+      border-bottom: 0;
+    }
+    .terminal-domain::after {
+      right: 12px;
+      bottom: 12px;
+      border-left: 0;
+      border-top: 0;
+    }
+    .terminal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 8px 16px;
+      border-bottom: 1px dashed rgba(116, 216, 255, 0.14);
+    }
+    .terminal-head h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+    .terminal-head p {
+      font-size: 0.76rem;
+    }
+    .terminal-deck {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .terminal-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 2fr) 104px 114px 110px 92px 100px 110px minmax(178px, 1.2fr);
+      gap: 0;
+      align-items: center;
+      min-height: 58px;
+      padding: 0 10px;
+      border-radius: 18px;
+      border: 1px solid rgba(116, 216, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .terminal-row:hover,
+    .terminal-row.is-active {
+      background: rgba(116, 216, 255, 0.08);
+    }
+    .terminal-row.deploying::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0 18%, rgba(116, 216, 255, 0.16) 32% 44%, transparent 58% 100%);
+      transform: translateX(-120%);
+      animation: deploySweep 3.8s linear infinite;
+      pointer-events: none;
+    }
+    .terminal-row.rollback::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0 24%, rgba(203, 156, 255, 0.14) 36% 48%, transparent 60% 100%);
+      transform: translateX(120%);
+      animation: rollbackSweep 4.6s linear infinite;
+      pointer-events: none;
+    }
+    .terminal-row.rollback {
+      background: linear-gradient(90deg, rgba(203, 156, 255, 0.06), rgba(255, 255, 255, 0.02) 34%);
+    }
+    .terminal-row .service-cell {
+      padding-right: 12px;
+    }
+    .terminal-row .replica-wrap {
+      justify-content: flex-start;
+    }
+    .terminal-row .table-type {
+      color: #dcecf4;
+      font-size: 0.82rem;
+    }
+    .terminal-row .release-tag {
+      color: #d8eef8;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 10px;
+    }
+    .terminal-header {
+      display: grid;
+      grid-template-columns: minmax(220px, 2fr) 104px 114px 110px 92px 100px 110px minmax(178px, 1.2fr);
+      padding: 0 10px 8px;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #97b1c0;
+    }
+    @keyframes deploySweep {
+      from { transform: translateX(-120%); }
+      to { transform: translateX(120%); }
+    }
+    @keyframes rollbackSweep {
+      from { transform: translateX(120%); }
+      to { transform: translateX(-120%); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <script>document.write(BreadthVis.cardHeader("Future Table / Terminal Deck", "A sharper console-like interpretation: domain consoles, bracket chrome, and compact rows that still open the richer constellation panel on click."));</script>
+    <div class="scene">
+      <div class="summary"></div>
+      <div class="scene-note">This pushes the concept toward a near-future operator console. The interaction model stays the same, but the visual language is much tighter and more technical.</div>
+      <div class="canvas" id="canvas"></div>
+    </div>
+  </div>
+  <script>
+    const scene = document.querySelector(".scene");
+    scene.querySelector(".summary").innerHTML = FutureTableLab.summaryCards("terminal deck");
+    scene.insertAdjacentHTML("beforeend", FutureTableLab.focusPanelMarkup());
+
+    function renderTerminalRow(service) {
+      return `
+        <article class="service-row terminal-row ${service.health} ${service.lifecycle}" data-service-id="${service.id}" style="--accent:${FutureTableLab.serviceAccent(service)}">
+          <div class="service-cell">
+            <span class="service-dot"></span>
+            <div class="service-title">
+              <div class="service-name">${service.label}</div>
+              <div class="service-sub">${service.deploy}</div>
+            </div>
+          </div>
+          <div>${FutureTableLab.chip(service.health, service.health)}</div>
+          <div>${FutureTableLab.chip(service.lifecycle, `lifecycle ${service.lifecycle}`)}</div>
+          <div class="table-type">${service.serviceType}</div>
+          <div class="table-metric mono">${service.latency}</div>
+          <div class="table-metric mono">${service.traffic}</div>
+          <div class="replica-wrap">
+            <span class="replica-indicator${service.lifecycle === "scaling" ? " scaling" : ""}"${service.replicasHint ? ` title="${service.replicasHint}" aria-label="${service.replicasHint}"` : ""}>${service.replicasCurrent}</span>
+          </div>
+          <div class="release-tag mono" title="${service.imageTag}">${service.imageShort}</div>
+        </article>
+      `;
+    }
+
+    const canvas = document.getElementById("canvas");
+    canvas.innerHTML = FutureTableLab.groupedDomains.map((domain) => `
+      <section class="terminal-domain" style="--domain-color:${domain.color}">
+        <div class="terminal-head">
+          <div>
+            <h2>${domain.label}</h2>
+            <p>${domain.note}</p>
+          </div>
+          ${FutureTableLab.domainHeaderMeta(domain)}
+        </div>
+        <div class="terminal-header">
+          <div>Service</div>
+          <div>Health</div>
+          <div>Mode</div>
+          <div>Type</div>
+          <div>Latency</div>
+          <div>Traffic</div>
+          <div>Replicas</div>
+          <div>Release</div>
+        </div>
+        <div class="terminal-deck">
+          ${domain.services.map((service) => renderTerminalRow(service)).join("")}
+        </div>
+      </section>
+    `).join("");
+
+    FutureTableLab.attachPanel(scene);
+  </script>
+</body>
+</html>
