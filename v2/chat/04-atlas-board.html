@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atlas Board</title>
+  <link rel="stylesheet" href="./shared.css">
+  <script src="./shared.js"></script>
+  <style>
+    body {
+      background:
+        radial-gradient(circle at 18% 14%, rgba(255, 115, 115, 0.12), transparent 22%),
+        radial-gradient(circle at 84% 10%, rgba(121, 237, 255, 0.12), transparent 18%),
+        linear-gradient(180deg, #120d10, #17151a 54%, #0a0f15);
+      font-family: "Segoe UI Variable Display", "Aptos Display", "Segoe UI", sans-serif;
+    }
+
+    .atlas-scene {
+      display: grid;
+      gap: 18px;
+    }
+
+    .atlas-hero,
+    .atlas-panel,
+    .atlas-dock {
+      padding: 20px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(14, 14, 18, 0.82);
+      box-shadow: var(--shadow);
+    }
+
+    .atlas-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 420px;
+      gap: 18px;
+    }
+
+    .atlas-hero h2 {
+      margin: 0;
+      font-size: clamp(2rem, 3.5vw, 3.3rem);
+      line-height: 0.94;
+      letter-spacing: -0.05em;
+      max-width: 11ch;
+    }
+
+    .atlas-hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.56;
+      max-width: 60ch;
+    }
+
+    .atlas-copy {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .atlas-core {
+      position: relative;
+      min-height: 300px;
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        radial-gradient(circle at center, rgba(121, 237, 255, 0.1), transparent 26%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 26%),
+        #0a0f15;
+    }
+
+    .atlas-core::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        linear-gradient(rgba(121, 237, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(121, 237, 255, 0.04) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+
+    .atlas-core-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 150px;
+      height: 150px;
+      margin: -75px 0 0 -75px;
+      border-radius: 34px;
+      background: linear-gradient(180deg, rgba(255, 123, 123, 0.3), rgba(121, 237, 255, 0.16));
+      box-shadow: 0 0 40px rgba(255, 123, 123, 0.14);
+    }
+
+    .atlas-halo {
+      position: absolute;
+      border-radius: 999px;
+      border: 1px solid rgba(121, 237, 255, 0.16);
+      animation: haloPulse 5s ease-in-out infinite;
+    }
+
+    .halo-a {
+      inset: 62px 108px;
+    }
+
+    .halo-b {
+      inset: 42px 72px;
+      animation-delay: -1.2s;
+    }
+
+    .atlas-node {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffbf8d, #7ce3ff);
+      box-shadow: 0 0 18px rgba(121, 237, 255, 0.32);
+    }
+
+    .atlas-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) 330px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .atlas-board {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+      grid-auto-flow: dense;
+    }
+
+    .atlas-episode {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .atlas-episode.oracle {
+      background: linear-gradient(180deg, rgba(121, 237, 255, 0.12), rgba(255, 255, 255, 0.03));
+    }
+
+    .atlas-episode.operator {
+      background: linear-gradient(180deg, rgba(120, 255, 205, 0.12), rgba(255, 255, 255, 0.03));
+    }
+
+    .atlas-episode.system {
+      background: linear-gradient(180deg, rgba(255, 177, 122, 0.12), rgba(255, 255, 255, 0.03));
+    }
+
+    .atlas-episode.is-active {
+      border-color: rgba(255, 123, 123, 0.26);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 0 26px rgba(255, 123, 123, 0.12);
+    }
+
+    .atlas-episode h3 {
+      margin: 0;
+      font-size: 1.06rem;
+      letter-spacing: -0.03em;
+    }
+
+    .atlas-episode p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.52;
+    }
+
+    .atlas-side {
+      display: grid;
+      gap: 14px;
+      position: sticky;
+      top: 18px;
+    }
+
+    .atlas-panel {
+      display: grid;
+      gap: 14px;
+    }
+
+    .atlas-panel p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.52;
+    }
+
+    .atlas-entity {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 52px;
+      padding: 0 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      transition: border-color 180ms ease, transform 180ms ease;
+    }
+
+    .atlas-entity.is-hot {
+      border-color: rgba(255, 123, 123, 0.26);
+      transform: translateY(-2px);
+      box-shadow: 0 0 22px rgba(255, 123, 123, 0.12);
+    }
+
+    .atlas-dock {
+      position: sticky;
+      bottom: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    @keyframes haloPulse {
+      0%, 100% { transform: scale(0.96); opacity: 0.44; }
+      50% { transform: scale(1.03); opacity: 0.88; }
+    }
+
+    @media (max-width: 1100px) {
+      .atlas-hero,
+      .atlas-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .atlas-side {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="proto-shell">
+    <script>
+      document.write(ChatProto.headerMarkup({
+        title: "Atlas Board",
+        eyebrow: "Prototype 04",
+        note: "Instead of a transcript, the mission becomes a spatial board. Oracle episodes, entities, and actions live on one asymmetric operations surface."
+      }));
+    </script>
+
+    <section class="atlas-scene">
+      <section class="atlas-hero">
+        <div class="atlas-copy">
+          <span class="eyebrow">Spatial mission board</span>
+          <h2>Restore staging readiness</h2>
+          <p>This direction spreads the mission across a spatial board. The Oracle is still conversational, but each turn becomes a tile linked to entities, proof, and action pathways.</p>
+          <div class="status-row" id="atlasMeta"></div>
+          <div class="mini-chip-row" id="atlasEvidence"></div>
+        </div>
+        <div class="atlas-core">
+          <div class="atlas-halo halo-a"></div>
+          <div class="atlas-halo halo-b"></div>
+          <div class="atlas-core-center"></div>
+          <div class="atlas-node" style="left:18%;top:28%;"></div>
+          <div class="atlas-node" style="left:72%;top:24%;"></div>
+          <div class="atlas-node" style="left:22%;top:70%;"></div>
+          <div class="atlas-node" style="left:78%;top:68%;"></div>
+        </div>
+      </section>
+
+      <section class="atlas-layout">
+        <section class="atlas-board" id="atlasBoard"></section>
+
+        <aside class="atlas-side">
+          <section class="atlas-panel">
+            <div class="panel-heading">Focus detail</div>
+            <div id="atlasFocus"><p class="muted">The latest Oracle tile will appear here as the simulation advances.</p></div>
+          </section>
+          <section class="atlas-panel">
+            <div class="panel-heading">Linked entities</div>
+            <div id="atlasEntities"></div>
+          </section>
+          <section class="atlas-panel">
+            <div class="panel-heading">Link capsules</div>
+            <div id="atlasLinks"></div>
+          </section>
+        </aside>
+      </section>
+
+      <section class="atlas-dock">
+        <div class="panel-heading">Intent bar</div>
+        <div class="intent-row" id="atlasIntents"></div>
+        <div class="composer-input" id="atlasComposer">Ask Oracle about this mission</div>
+      </section>
+    </section>
+  </main>
+  <script>
+    const mission = ChatProto.mission;
+    const steps = ChatProto.story;
+    const atlasMeta = document.getElementById("atlasMeta");
+    const atlasEvidence = document.getElementById("atlasEvidence");
+    const atlasBoard = document.getElementById("atlasBoard");
+    const atlasFocus = document.getElementById("atlasFocus");
+    const atlasEntities = document.getElementById("atlasEntities");
+    const atlasLinks = document.getElementById("atlasLinks");
+    const atlasIntents = document.getElementById("atlasIntents");
+    const atlasComposer = document.getElementById("atlasComposer");
+
+    atlasMeta.innerHTML = mission.meta.map(ChatProto.statusPillMarkup).join("");
+    atlasEvidence.innerHTML = mission.evidence.map(ChatProto.chipMarkup).join("");
+
+    const entityMarkup = mission.entities.map((item) => `
+      <button class="atlas-entity" type="button" data-label="${ChatProto.escapeHtml(item.label)}">
+        <span class="entity-label">${ChatProto.escapeHtml(item.label)}</span>
+        <span class="entity-value">${ChatProto.escapeHtml(item.value)}</span>
+      </button>
+    `).join("");
+    atlasEntities.innerHTML = entityMarkup;
+    atlasLinks.innerHTML = ChatProto.entityListMarkup(mission.links.map((item) => ({ label: item.kind, value: item.label })));
+
+    const boardPositions = [
+      { col: "1 / span 7", row: "span 2" },
+      { col: "8 / span 5", row: "span 1" },
+      { col: "1 / span 4", row: "span 2" },
+      { col: "5 / span 8", row: "span 1" },
+      { col: "1 / span 6", row: "span 2" },
+      { col: "7 / span 6", row: "span 1" },
+      { col: "2 / span 10", row: "span 1" }
+    ];
+
+    const cardMap = new Map();
+
+    function setAtlasIntents(items) {
+      const values = items && items.length ? items : mission.quickAsks.slice(1, 6);
+      atlasIntents.innerHTML = values.map((item) => `<button class="intent-pill" type="button">${ChatProto.escapeHtml(item)}</button>`).join("");
+    }
+
+    function focusMarkup(step) {
+      if (step.kind === "oracle") {
+        return `
+          <h3 style="margin:0;font-size:1.2rem;letter-spacing:-0.03em;">${ChatProto.escapeHtml(step.label)}</h3>
+          <p>${ChatProto.codeWrap(step.summary)}</p>
+          ${step.evidence ? ChatProto.evidenceMarkup(step.evidence) : ""}
+        `;
+      }
+      if (step.kind === "operator") {
+        return `
+          <h3 style="margin:0;font-size:1.2rem;letter-spacing:-0.03em;">Operator steer</h3>
+          <p>${ChatProto.codeWrap(step.prompt)}</p>
+        `;
+      }
+      return `
+        <h3 style="margin:0;font-size:1.2rem;letter-spacing:-0.03em;">${ChatProto.escapeHtml(step.label)}</h3>
+        <p>${ChatProto.escapeHtml(step.detail)}</p>
+      `;
+    }
+
+    function renderEpisode(step, index) {
+      const label = step.kind === "system" ? step.label : (step.label || "Operator");
+      const body = step.kind === "operator" ? step.prompt : (step.summary || step.detail);
+      return `
+        <button class="atlas-episode ${ChatProto.escapeHtml(step.kind)} fade-up" type="button" data-id="atlas-${index}" style="grid-column:${boardPositions[index].col};grid-row:${boardPositions[index].row};text-align:left;">
+          <span class="eyebrow">${ChatProto.escapeHtml(step.phase)}</span>
+          <h3>${ChatProto.escapeHtml(label)}</h3>
+          <p>${ChatProto.escapeHtml(body.replaceAll("`", ""))}</p>
+        </button>
+      `;
+    }
+
+    function highlightEntities(step) {
+      const targetLabel = step.phase === "decide"
+        ? "Revision"
+        : step.phase === "act"
+          ? "Last ready"
+          : "Service";
+      document.querySelectorAll(".atlas-entity").forEach((node) => {
+        node.classList.toggle("is-hot", node.dataset.label === targetLabel);
+      });
+    }
+
+    function selectCard(id) {
+      cardMap.forEach((value, key) => {
+        value.node.classList.toggle("is-active", key === id);
+      });
+      const step = cardMap.get(id).step;
+      atlasFocus.innerHTML = focusMarkup(step);
+      atlasEvidence.innerHTML = (step.evidence || mission.evidence).map(ChatProto.chipMarkup).join("");
+      setAtlasIntents(step.followups);
+      atlasComposer.textContent = step.kind === "operator" ? step.prompt.replaceAll("`", "") : (step.followups && step.followups[0]) || "Ask Oracle about this mission";
+      highlightEntities(step);
+    }
+
+    const controller = ChatProto.createSequencer({
+      steps,
+      gap: 1450,
+      onReset() {
+        cardMap.clear();
+        atlasBoard.innerHTML = "";
+        atlasFocus.innerHTML = '<p class="muted">The latest Oracle tile will appear here as the simulation advances.</p>';
+        atlasEvidence.innerHTML = mission.evidence.map(ChatProto.chipMarkup).join("");
+        setAtlasIntents();
+        atlasComposer.textContent = "Ask Oracle about this mission";
+        document.querySelectorAll(".atlas-entity").forEach((node) => node.classList.remove("is-hot"));
+      },
+      onStep(step, index) {
+        atlasBoard.insertAdjacentHTML("beforeend", renderEpisode(step, index));
+        const id = `atlas-${index}`;
+        const node = atlasBoard.querySelector(`[data-id="${id}"]`);
+        node.addEventListener("click", () => selectCard(id));
+        cardMap.set(id, { node, step });
+        selectCard(id);
+      }
+    });
+
+    ChatProto.bindReplay(document.querySelector(".replay-button"), controller);
+
+    atlasIntents.addEventListener("click", (event) => {
+      const pill = event.target.closest(".intent-pill");
+      if (!pill) {
+        return;
+      }
+      atlasComposer.textContent = pill.textContent;
+    });
+  </script>
+</body>
+</html>

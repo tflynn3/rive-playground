@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mission Chat Prototypes</title>
+  <link rel="stylesheet" href="./shared.css">
+  <script src="./shared.js"></script>
+  <style>
+    body {
+      background:
+        radial-gradient(circle at 16% 18%, rgba(121, 237, 255, 0.12), transparent 22%),
+        radial-gradient(circle at 82% 12%, rgba(120, 255, 205, 0.1), transparent 20%),
+        linear-gradient(160deg, #071019, #0c1c28);
+    }
+
+    .intro-card {
+      display: grid;
+      gap: 14px;
+      padding: 22px;
+      border-radius: 30px;
+      border: 1px solid rgba(121, 237, 255, 0.16);
+      background: linear-gradient(180deg, rgba(12, 27, 40, 0.92), rgba(8, 16, 24, 0.78));
+      box-shadow: var(--shadow);
+    }
+
+    .intro-card h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      letter-spacing: -0.03em;
+    }
+
+    .review-notes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <main class="proto-shell">
+    <header class="page-header">
+      <div class="gallery-intro">
+        <span class="eyebrow">Mission Chat / Rive Prototypes</span>
+        <h1>Five unique ways to make chat feel like a mission system.</h1>
+        <p>Each prototype replays the same staging recovery mission, but the interaction grammar changes: centered cockpit, layered briefing sheets, timeline rail, spatial board, and verification waterfall.</p>
+      </div>
+      <div class="header-actions">
+        <a class="back-link" href="../index.html">Back to V2</a>
+      </div>
+    </header>
+
+    <section class="intro-card">
+      <h2>Review lens</h2>
+      <p class="muted">Compare where the page places attention first, how Oracle actions are surfaced, whether proof feels secondary, and which motion language seems worth translating into actual Rive state machines.</p>
+      <div class="review-notes">
+        <span class="status-pill" data-tone="cool">Mission focus first</span>
+        <span class="status-pill" data-tone="good">Actions over typing</span>
+        <span class="status-pill" data-tone="warn">Proof on demand</span>
+        <span class="status-pill" data-tone="cool">Simulated live thread</span>
+      </div>
+    </section>
+
+    <section class="gallery-grid" id="gallery"></section>
+  </main>
+  <script>
+    const gallery = document.getElementById("gallery");
+    gallery.innerHTML = ChatProto.prototypes.map((item, index) => `
+      <a class="gallery-card" href="./${item.file}" data-tone="${item.tone}">
+        <div class="gallery-thumb"></div>
+        <span class="eyebrow">Prototype ${String(index + 1).padStart(2, "0")}</span>
+        <h2>${item.title}</h2>
+        <p>${item.description}</p>
+      </a>
+    `).join("");
+  </script>
+</body>
+</html>

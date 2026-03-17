@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verification Cascade</title>
+  <link rel="stylesheet" href="./shared.css">
+  <script src="./shared.js"></script>
+  <style>
+    body {
+      background:
+        radial-gradient(circle at 18% 12%, rgba(121, 237, 255, 0.12), transparent 22%),
+        radial-gradient(circle at 86% 14%, rgba(152, 255, 214, 0.12), transparent 20%),
+        linear-gradient(180deg, #061019, #0b1722 56%, #050b12);
+      font-family: "Aptos", "Segoe UI Variable Text", "Segoe UI", sans-serif;
+    }
+
+    .cascade-scene {
+      display: grid;
+      gap: 18px;
+    }
+
+    .cascade-hero,
+    .cascade-ledger,
+    .cascade-dock,
+    .cascade-thread-shell {
+      padding: 20px;
+      border-radius: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 26%),
+        rgba(7, 15, 22, 0.84);
+      box-shadow: var(--shadow);
+    }
+
+    .cascade-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .hero-copy {
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .hero-copy h2 {
+      margin: 0;
+      font-size: clamp(2rem, 3.4vw, 3.2rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      max-width: 11ch;
+    }
+
+    .hero-copy p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.56;
+      max-width: 62ch;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .spotlight-card,
+    .ledger-block {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .spotlight-card strong {
+      font-size: 1.08rem;
+      line-height: 1.4;
+      letter-spacing: -0.02em;
+    }
+
+    .spotlight-card p,
+    .ledger-block p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .hero-right {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .cascade-meter {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: 14px;
+      min-height: 320px;
+      padding: 18px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        radial-gradient(circle at 50% 16%, rgba(121, 237, 255, 0.08), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%),
+        #08131d;
+    }
+
+    .meter-rail {
+      position: relative;
+      min-height: 280px;
+      width: 72px;
+      justify-self: center;
+    }
+
+    .meter-rail::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 16px;
+      bottom: 16px;
+      width: 12px;
+      margin-left: -6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+
+    .cascade-meter-fill {
+      position: absolute;
+      left: 50%;
+      bottom: 16px;
+      width: 12px;
+      height: 18%;
+      margin-left: -6px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #8efed3, #75dfff);
+      box-shadow: 0 0 26px rgba(121, 237, 255, 0.24);
+      transition: height 320ms ease;
+    }
+
+    .cascade-meter-node {
+      position: absolute;
+      left: 50%;
+      width: 24px;
+      height: 24px;
+      margin-left: -12px;
+      border-radius: 50%;
+      border: 3px solid rgba(121, 237, 255, 0.18);
+      background: #09141d;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .cascade-meter-node.is-done {
+      border-color: rgba(120, 255, 205, 0.28);
+      background: rgba(120, 255, 205, 0.14);
+    }
+
+    .cascade-meter-node.is-active {
+      transform: scale(1.12);
+      border-color: rgba(121, 237, 255, 0.34);
+      background: rgba(121, 237, 255, 0.16);
+      box-shadow: 0 0 20px rgba(121, 237, 255, 0.2);
+    }
+
+    .cascade-meter-labels {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 280px;
+      padding: 6px 0;
+    }
+
+    .meter-phase {
+      display: grid;
+      gap: 2px;
+      min-height: 42px;
+      align-content: center;
+      color: var(--muted);
+      transition: color 180ms ease, transform 180ms ease;
+    }
+
+    .meter-phase strong {
+      font-size: 0.96rem;
+      letter-spacing: -0.02em;
+    }
+
+    .meter-phase small {
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .meter-phase.is-done {
+      color: #dffaf0;
+    }
+
+    .meter-phase.is-active {
+      color: #eef8ff;
+      transform: translateX(4px);
+    }
+
+    .hero-proof {
+      min-height: 110px;
+    }
+
+    .cascade-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .cascade-thread-shell {
+      display: grid;
+      gap: 16px;
+    }
+
+    .cascade-thread-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .thread-title {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.04rem;
+      color: #e8f4fb;
+      letter-spacing: -0.02em;
+    }
+
+    .thread-status {
+      justify-content: flex-end;
+    }
+
+    .cascade-thread {
+      position: relative;
+      display: grid;
+      gap: 14px;
+      padding-left: 6px;
+    }
+
+    .cascade-thread::before {
+      content: "";
+      position: absolute;
+      left: 24px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: linear-gradient(180deg, rgba(121, 237, 255, 0.28), rgba(121, 237, 255, 0.02));
+    }
+
+    .cascade-step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+      transition: transform 180ms ease, opacity 180ms ease;
+    }
+
+    .step-pin {
+      position: relative;
+      z-index: 1;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid rgba(121, 237, 255, 0.2);
+      background: rgba(7, 15, 22, 0.96);
+      box-shadow: 0 0 18px rgba(121, 237, 255, 0.12);
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .step-pin::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #8efed3, #75dfff);
+    }
+
+    .step-card {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      transition: padding 180ms ease, opacity 180ms ease, transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .step-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .step-card h3 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: -0.03em;
+    }
+
+    .step-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.56;
+    }
+
+    .step-body .code {
+      color: #e8fbff;
+    }
+
+    .cascade-step.is-live .step-card {
+      border-color: rgba(121, 237, 255, 0.26);
+      background: linear-gradient(180deg, rgba(121, 237, 255, 0.12), rgba(255, 255, 255, 0.04));
+      transform: translateX(4px);
+    }
+
+    .cascade-step.is-live .step-pin {
+      transform: scale(1.04);
+      border-color: rgba(121, 237, 255, 0.32);
+      box-shadow: 0 0 28px rgba(121, 237, 255, 0.18);
+      animation: livePulse 2.4s ease-in-out infinite;
+    }
+
+    .cascade-step.is-recent .step-card {
+      border-color: rgba(120, 255, 205, 0.16);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .cascade-step.is-compact .step-card {
+      padding: 12px 14px;
+      opacity: 0.74;
+    }
+
+    .cascade-step.is-compact .step-pin {
+      transform: scale(0.92);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: none;
+    }
+
+    .cascade-step.is-compact .action-grid,
+    .cascade-step.is-compact .followup-row,
+    .cascade-step.is-compact .checklist,
+    .cascade-step.is-compact .mini-chip-row {
+      display: none;
+    }
+
+    .cascade-step.is-compact .step-body {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .cascade-ledger {
+      display: grid;
+      gap: 14px;
+      position: sticky;
+      top: 18px;
+    }
+
+    .ledger-rail {
+      display: grid;
+      gap: 10px;
+    }
+
+    .phase-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 48px;
+      padding: 0 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .phase-done {
+      border-color: rgba(120, 255, 205, 0.18);
+      background: rgba(120, 255, 205, 0.08);
+    }
+
+    .phase-current {
+      border-color: rgba(121, 237, 255, 0.24);
+      background: rgba(121, 237, 255, 0.1);
+    }
+
+    .phase-pill small {
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .progress-card {
+      display: grid;
+      gap: 10px;
+    }
+
+    .progress-card strong {
+      font-size: 1.12rem;
+      letter-spacing: -0.02em;
+    }
+
+    .cascade-dock {
+      position: sticky;
+      bottom: 14px;
+      display: grid;
+      gap: 12px;
+      backdrop-filter: blur(12px);
+    }
+
+    .dock-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { transform: scale(1.04); }
+      50% { transform: scale(1.12); }
+    }
+
+    @media (max-width: 1080px) {
+      .cascade-hero,
+      .cascade-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .cascade-ledger {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cascade-meter {
+        grid-template-columns: 58px minmax(0, 1fr);
+      }
+
+      .cascade-thread-head,
+      .dock-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="proto-shell">
+    <script>
+      document.write(ChatProto.headerMarkup({
+        title: "Verification Cascade",
+        eyebrow: "Prototype 05",
+        note: "This direction tightens the mission around progress and proof. Finished work compresses upward while the current checkpoint expands."
+      }));
+    </script>
+
+    <section class="cascade-scene">
+      <section class="cascade-hero">
+        <div class="hero-copy">
+          <div>
+            <span class="eyebrow">Verification-first flow</span>
+            <h2>Restore staging readiness</h2>
+          </div>
+          <p>Rather than treating verification as an afterthought, this concept turns the mission into a procedural cascade. The live checkpoint stays expanded while older work compacts into a mission journal.</p>
+          <div class="status-row" id="cascadeMeta"></div>
+          <div class="hero-grid">
+            <div class="spotlight-card">
+              <div class="panel-heading">Objective</div>
+              <strong id="heroObjective"></strong>
+              <p>Keep the fix scoped, preserve proof, and bias the flow toward confident verification.</p>
+            </div>
+            <div class="spotlight-card">
+              <div class="panel-heading">Current checkpoint</div>
+              <strong id="heroCheckpoint">Awaiting first Oracle checkpoint</strong>
+              <p id="heroNextAction">Mission progress will populate here as the simulation advances.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <div class="cascade-meter">
+            <div class="meter-rail" id="meterRail">
+              <div class="cascade-meter-fill" id="cascadeMeterFill"></div>
+            </div>
+            <div class="cascade-meter-labels" id="meterPhaseList"></div>
+          </div>
+          <div class="spotlight-card hero-proof">
+            <div class="panel-heading">Live proof</div>
+            <div class="mini-chip-row" id="heroProof"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cascade-layout">
+        <section class="cascade-thread-shell">
+          <div class="cascade-thread-head">
+            <div>
+              <div class="panel-heading">Mission cascade</div>
+              <strong class="thread-title">Live checkpoint expands while prior work compacts into a mission journal.</strong>
+            </div>
+            <div class="status-row thread-status" id="threadStatus"></div>
+          </div>
+          <div class="cascade-thread" id="cascadeThread"></div>
+        </section>
+
+        <aside class="cascade-ledger">
+          <section class="ledger-block">
+            <div class="panel-heading">Phase rail</div>
+            <div class="ledger-rail" id="ledgerRail"></div>
+          </section>
+          <section class="ledger-block">
+            <div class="panel-heading">Checkpoint detail</div>
+            <div id="ledgerDetail"><p class="muted">The current verification checkpoint will appear here.</p></div>
+          </section>
+          <section class="ledger-block">
+            <div class="panel-heading">Pinned context</div>
+            <div id="ledgerEntities"></div>
+          </section>
+          <section class="ledger-block">
+            <div class="panel-heading">Evidence freshness</div>
+            <div class="mini-chip-row" id="ledgerEvidence"></div>
+          </section>
+        </aside>
+      </section>
+
+      <section class="cascade-dock">
+        <div class="dock-head">
+          <div class="panel-heading">Prompt controls</div>
+          <div class="status-row" id="dockStatus"></div>
+        </div>
+        <div class="intent-row" id="cascadeIntents"></div>
+        <div class="composer-input" id="cascadeComposer">Ask Oracle about this mission</div>
+      </section>
+    </section>
+  </main>
+  <script>
+    const mission = ChatProto.mission;
+    const steps = ChatProto.story;
+    const phases = ChatProto.phases;
+    const cascadeMeta = document.getElementById("cascadeMeta");
+    const heroObjective = document.getElementById("heroObjective");
+    const heroCheckpoint = document.getElementById("heroCheckpoint");
+    const heroNextAction = document.getElementById("heroNextAction");
+    const heroProof = document.getElementById("heroProof");
+    const cascadeMeterFill = document.getElementById("cascadeMeterFill");
+    const meterRail = document.getElementById("meterRail");
+    const meterPhaseList = document.getElementById("meterPhaseList");
+    const cascadeThread = document.getElementById("cascadeThread");
+    const threadStatus = document.getElementById("threadStatus");
+    const ledgerRail = document.getElementById("ledgerRail");
+    const ledgerEvidence = document.getElementById("ledgerEvidence");
+    const ledgerDetail = document.getElementById("ledgerDetail");
+    const ledgerEntities = document.getElementById("ledgerEntities");
+    const cascadeIntents = document.getElementById("cascadeIntents");
+    const dockStatus = document.getElementById("dockStatus");
+    const cascadeComposer = document.getElementById("cascadeComposer");
+
+    cascadeMeta.innerHTML = mission.meta.map(ChatProto.statusPillMarkup).join("");
+    heroObjective.innerHTML = ChatProto.codeWrap(mission.objective);
+    heroProof.innerHTML = mission.evidence.map(ChatProto.chipMarkup).join("");
+    ledgerEvidence.innerHTML = mission.evidence.map(ChatProto.chipMarkup).join("");
+    ledgerEntities.innerHTML = ChatProto.entityListMarkup(mission.entities);
+    ChatProto.applyPhaseRail(ledgerRail, "diagnose");
+
+    meterRail.insertAdjacentHTML("beforeend", phases.map((phase, index) => `
+      <div class="cascade-meter-node" data-phase="${ChatProto.escapeHtml(phase.id)}" style="bottom:${16 + index * 62}px;"></div>
+    `).join(""));
+
+    meterPhaseList.innerHTML = phases.map((phase, index) => `
+      <div class="meter-phase" data-phase="${ChatProto.escapeHtml(phase.id)}">
+        <strong>${ChatProto.escapeHtml(phase.label)}</strong>
+        <small>${String(index + 1).padStart(2, "0")}</small>
+      </div>
+    `).join("");
+
+    function phaseName(id) {
+      const match = phases.find((phase) => phase.id === id);
+      return match ? match.label : id;
+    }
+
+    function phaseIndex(id) {
+      const index = phases.findIndex((phase) => phase.id === id);
+      return index === -1 ? 0 : index;
+    }
+
+    function bodyMarkup(step) {
+      if (step.kind === "operator") {
+        return ChatProto.codeWrap(step.prompt);
+      }
+      if (step.summary) {
+        return ChatProto.codeWrap(step.summary);
+      }
+      return ChatProto.escapeHtml(step.detail);
+    }
+
+    function stepLabel(step) {
+      if (step.kind === "operator") {
+        return "Operator steer";
+      }
+      return step.label || "Checkpoint";
+    }
+
+    function stepTone(step) {
+      if (step.kind === "operator") {
+        return "good";
+      }
+      if (step.kind === "system") {
+        return "warn";
+      }
+      return "cool";
+    }
+
+    function stepRole(step) {
+      if (step.kind === "operator") {
+        return "Operator";
+      }
+      if (step.kind === "system") {
+        return "Checkpoint";
+      }
+      return "Oracle";
+    }
+
+    function setCascadeIntents(items) {
+      const values = items && items.length ? items : mission.quickAsks.slice(0, 4);
+      cascadeIntents.innerHTML = values.map((item) => `<button class="intent-pill" type="button">${ChatProto.escapeHtml(item)}</button>`).join("");
+    }
+
+    function updateMeter(phase, stepIndex) {
+      const activeIndex = phaseIndex(phase);
+      cascadeMeterFill.style.height = `${18 + ((stepIndex + 1) / steps.length) * 66}%`;
+
+      document.querySelectorAll(".cascade-meter-node").forEach((node) => {
+        const index = phaseIndex(node.dataset.phase);
+        node.classList.toggle("is-done", index < activeIndex);
+        node.classList.toggle("is-active", index === activeIndex);
+      });
+
+      document.querySelectorAll(".meter-phase").forEach((node) => {
+        const index = phaseIndex(node.dataset.phase);
+        node.classList.toggle("is-done", index < activeIndex);
+        node.classList.toggle("is-active", index === activeIndex);
+      });
+    }
+
+    function ledgerMarkup(step, index) {
+      const next = step.followups && step.followups[0] ? step.followups[0] : mission.nextAction;
+      return `
+        <div class="progress-card">
+          <span class="eyebrow">${ChatProto.escapeHtml(phaseName(step.phase))}</span>
+          <strong>${ChatProto.escapeHtml(stepLabel(step))}</strong>
+          <p>${bodyMarkup(step)}</p>
+          <div class="mini-chip-row">
+            <span class="mini-chip cool">Step ${index + 1} of ${steps.length}</span>
+            <span class="mini-chip ${ChatProto.escapeHtml(stepTone(step))}">${ChatProto.escapeHtml(stepRole(step))}</span>
+          </div>
+          ${(step.evidence || mission.evidence) ? ChatProto.evidenceMarkup(step.evidence || mission.evidence) : ""}
+          <div class="status-row">
+            <span class="status-pill" data-tone="cool">Next</span>
+            <span class="status-pill" data-tone="good">${ChatProto.escapeHtml(next)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStep(step, index) {
+      return `
+        <article class="cascade-step fade-up" data-index="${index}" data-phase="${ChatProto.escapeHtml(step.phase)}">
+          <div class="step-pin"></div>
+          <div class="step-card">
+            <div class="step-top">
+              <span class="eyebrow">${ChatProto.escapeHtml(phaseName(step.phase))}</span>
+              <span class="status-pill" data-tone="${ChatProto.escapeHtml(stepTone(step))}">${ChatProto.escapeHtml(stepRole(step))}</span>
+            </div>
+            <h3>${ChatProto.escapeHtml(stepLabel(step))}</h3>
+            <p class="step-body">${bodyMarkup(step)}</p>
+            ${step.evidence ? ChatProto.evidenceMarkup(step.evidence) : ""}
+            ${step.cards ? ChatProto.cardsMarkup(step.cards) : ""}
+            ${step.checklist ? ChatProto.checklistMarkup(step.checklist) : ""}
+            ${step.followups ? ChatProto.followupsMarkup(step.followups) : ""}
+          </div>
+        </article>
+      `;
+    }
+
+    function updateCompaction() {
+      const items = [...cascadeThread.children];
+      items.forEach((item, index) => {
+        item.classList.toggle("is-live", index === items.length - 1);
+        item.classList.toggle("is-recent", index === items.length - 2);
+        item.classList.toggle("is-compact", index < items.length - 2);
+      });
+    }
+
+    function updateHero(step, index) {
+      const next = step.followups && step.followups[0] ? step.followups[0] : mission.nextAction;
+      heroCheckpoint.textContent = stepLabel(step);
+      heroNextAction.textContent = next;
+      heroProof.innerHTML = (step.evidence || mission.evidence).map(ChatProto.chipMarkup).join("");
+      threadStatus.innerHTML = [
+        { text: `Phase ${phaseName(step.phase)}`, tone: "cool" },
+        { text: `Step ${index + 1}/${steps.length}`, tone: "good" },
+        { text: stepRole(step), tone: stepTone(step) }
+      ].map(ChatProto.statusPillMarkup).join("");
+      dockStatus.innerHTML = [
+        { text: `Live ${phaseName(step.phase)}`, tone: "cool" },
+        { text: next, tone: "good" }
+      ].map(ChatProto.statusPillMarkup).join("");
+    }
+
+    setCascadeIntents();
+    dockStatus.innerHTML = [
+      { text: "Live Diagnose", tone: "cool" },
+      { text: mission.nextAction, tone: "good" }
+    ].map(ChatProto.statusPillMarkup).join("");
+
+    const controller = ChatProto.createSequencer({
+      steps,
+      gap: 1450,
+      onReset() {
+        cascadeThread.innerHTML = "";
+        heroCheckpoint.textContent = "Awaiting first Oracle checkpoint";
+        heroNextAction.textContent = "Mission progress will populate here as the simulation advances.";
+        heroProof.innerHTML = mission.evidence.map(ChatProto.chipMarkup).join("");
+        ledgerEvidence.innerHTML = mission.evidence.map(ChatProto.chipMarkup).join("");
+        ChatProto.applyPhaseRail(ledgerRail, "diagnose");
+        ledgerDetail.innerHTML = '<p class="muted">The current verification checkpoint will appear here.</p>';
+        threadStatus.innerHTML = [
+          { text: "Phase Diagnose", tone: "cool" },
+          { text: "Step 0/8", tone: "good" },
+          { text: "Waiting", tone: "warn" }
+        ].map(ChatProto.statusPillMarkup).join("");
+        setCascadeIntents();
+        cascadeComposer.textContent = "Ask Oracle about this mission";
+        dockStatus.innerHTML = [
+          { text: "Live Diagnose", tone: "cool" },
+          { text: mission.nextAction, tone: "good" }
+        ].map(ChatProto.statusPillMarkup).join("");
+        updateMeter("diagnose", 0);
+      },
+      onStep(step, index) {
+        cascadeThread.insertAdjacentHTML("beforeend", renderStep(step, index));
+        updateCompaction();
+        cascadeThread.parentElement.scrollTop = cascadeThread.parentElement.scrollHeight;
+        ledgerEvidence.innerHTML = (step.evidence || mission.evidence).map(ChatProto.chipMarkup).join("");
+        ChatProto.applyPhaseRail(ledgerRail, step.phase);
+        ledgerDetail.innerHTML = ledgerMarkup(step, index);
+        setCascadeIntents(step.followups);
+        cascadeComposer.textContent = step.kind === "operator"
+          ? step.prompt.replaceAll("`", "")
+          : (step.followups && step.followups[0]) || "Ask Oracle about this mission";
+        updateMeter(step.phase, index);
+        updateHero(step, index);
+      }
+    });
+
+    ChatProto.bindReplay(document.querySelector(".replay-button"), controller);
+
+    cascadeIntents.addEventListener("click", (event) => {
+      const pill = event.target.closest(".intent-pill");
+      if (!pill) {
+        return;
+      }
+      cascadeComposer.textContent = pill.textContent;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal Rail</title>
+  <link rel="stylesheet" href="./shared.css">
+  <script src="./shared.js"></script>
+  <style>
+    body {
+      background:
+        radial-gradient(circle at 16% 16%, rgba(255, 184, 94, 0.12), transparent 22%),
+        radial-gradient(circle at 88% 10%, rgba(143, 108, 255, 0.12), transparent 20%),
+        linear-gradient(180deg, #100b14, #17121f 52%, #090c12);
+      font-family: "Aptos", "Segoe UI Variable Text", "Segoe UI", sans-serif;
+    }
+
+    .rail-scene {
+      display: grid;
+      gap: 18px;
+    }
+
+    .rail-hero,
+    .rail-detail,
+    .rail-dock {
+      padding: 18px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(12, 11, 18, 0.82);
+      box-shadow: var(--shadow);
+    }
+
+    .rail-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+      overflow: hidden;
+    }
+
+    .rail-hero h2 {
+      margin: 0;
+      font-size: clamp(2rem, 3.5vw, 3.3rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      max-width: 10ch;
+    }
+
+    .rail-hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 62ch;
+    }
+
+    .wave-panel {
+      position: relative;
+      min-height: 200px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 20%),
+        linear-gradient(180deg, #1a1117, #0d0f16);
+      overflow: hidden;
+    }
+
+    .wave-bars {
+      position: absolute;
+      inset: 18px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .wave-bars span {
+      flex: 1 1 auto;
+      border-radius: 999px 999px 10px 10px;
+      background: linear-gradient(180deg, rgba(255, 196, 118, 0.92), rgba(121, 237, 255, 0.24));
+      animation: wavePulse 2.8s ease-in-out infinite;
+      transform-origin: bottom;
+    }
+
+    .wave-bars span:nth-child(2n) {
+      animation-delay: -0.35s;
+    }
+
+    .wave-bars span:nth-child(3n) {
+      animation-delay: -0.7s;
+    }
+
+    .track-shell {
+      position: relative;
+      padding: 18px;
+      border-radius: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(12, 11, 18, 0.78);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .track-shell::before {
+      content: "";
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      top: 126px;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 190, 120, 0.32), rgba(121, 237, 255, 0.32), rgba(255, 255, 255, 0.06));
+    }
+
+    .scan-beam {
+      position: absolute;
+      top: 40px;
+      bottom: 40px;
+      width: 160px;
+      background: linear-gradient(90deg, transparent, rgba(255, 193, 110, 0.14), rgba(121, 237, 255, 0.18), transparent);
+      filter: blur(10px);
+      animation: railSweep 8s linear infinite;
+      pointer-events: none;
+    }
+
+    .rail-track {
+      position: relative;
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 12px 0 10px;
+      scroll-behavior: smooth;
+    }
+
+    .station {
+      position: relative;
+      flex: 0 0 300px;
+      display: grid;
+      gap: 10px;
+      padding: 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      text-align: left;
+    }
+
+    .station::before {
+      content: "";
+      position: absolute;
+      left: 22px;
+      top: 98px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffc978, #6cdfff);
+      box-shadow: 0 0 18px rgba(255, 195, 110, 0.34);
+    }
+
+    .station.is-active {
+      border-color: rgba(255, 196, 118, 0.3);
+      background: linear-gradient(180deg, rgba(255, 196, 118, 0.14), rgba(255, 255, 255, 0.04));
+      transform: translateY(-4px);
+    }
+
+    .station h3 {
+      margin: 6px 0 0;
+      font-size: 1.06rem;
+      letter-spacing: -0.03em;
+    }
+
+    .station p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .rail-detail {
+      display: grid;
+      gap: 14px;
+    }
+
+    .rail-dock {
+      position: sticky;
+      bottom: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    @keyframes railSweep {
+      from { transform: translateX(-18%); }
+      to { transform: translateX(1080px); }
+    }
+
+    @keyframes wavePulse {
+      0%, 100% { transform: scaleY(0.42); opacity: 0.6; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+
+    @media (max-width: 1080px) {
+      .rail-hero {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="proto-shell">
+    <script>
+      document.write(ChatProto.headerMarkup({
+        title: "Signal Rail",
+        eyebrow: "Prototype 03",
+        note: "The mission thread becomes a horizontal signal rail. Each Oracle turn is a station on a guided timeline rather than a message in a transcript."
+      }));
+    </script>
+
+    <section class="rail-scene">
+      <section class="rail-hero">
+        <div style="display:grid;gap:16px;">
+          <span class="eyebrow">Mission timeline</span>
+          <h2>Restore staging readiness</h2>
+          <p>This direction treats the conversation as a sequence of operator stations. The active station expands, the rail keeps history visible, and the detail panel below shows the selected stop.</p>
+          <div class="status-row" id="railMeta"></div>
+        </div>
+        <div class="wave-panel">
+          <div class="wave-bars">
+            <span style="height:34%"></span>
+            <span style="height:62%"></span>
+            <span style="height:48%"></span>
+            <span style="height:84%"></span>
+            <span style="height:58%"></span>
+            <span style="height:74%"></span>
+            <span style="height:44%"></span>
+            <span style="height:68%"></span>
+            <span style="height:36%"></span>
+          </div>
+          <div style="position:absolute;left:18px;right:18px;bottom:18px;" id="railEvidence"></div>
+        </div>
+      </section>
+
+      <section class="track-shell">
+        <div class="panel-heading">Mission Rail</div>
+        <div class="scan-beam"></div>
+        <div class="rail-track" id="railTrack"></div>
+      </section>
+
+      <section class="rail-detail" id="railDetail"></section>
+
+      <section class="rail-dock">
+        <div class="panel-heading">Intent bar</div>
+        <div class="intent-row" id="railIntents"></div>
+        <div class="composer-input" id="railComposer">Ask Oracle about this mission</div>
+      </section>
+    </section>
+  </main>
+  <script>
+    const mission = ChatProto.mission;
+    const steps = ChatProto.story;
+    const railMeta = document.getElementById("railMeta");
+    const railEvidence = document.getElementById("railEvidence");
+    const railTrack = document.getElementById("railTrack");
+    const railDetail = document.getElementById("railDetail");
+    const railIntents = document.getElementById("railIntents");
+    const railComposer = document.getElementById("railComposer");
+
+    railMeta.innerHTML = mission.meta.map(ChatProto.statusPillMarkup).join("");
+    railEvidence.innerHTML = ChatProto.evidenceMarkup(mission.evidence);
+
+    const stationMap = new Map();
+
+    function setRailIntents(items) {
+      const values = items && items.length ? items : mission.quickAsks.slice(0, 5);
+      railIntents.innerHTML = values.map((item) => `<button class="intent-pill" type="button">${ChatProto.escapeHtml(item)}</button>`).join("");
+    }
+
+    function detailMarkup(step) {
+      if (!step) {
+        return `
+          <div class="panel-heading">Detail</div>
+          <p class="muted">Select a station or let the simulation advance.</p>
+        `;
+      }
+
+      if (step.kind === "oracle") {
+        return `
+          <div class="panel-heading">${ChatProto.escapeHtml(step.label)}</div>
+          <h2 style="margin:0;font-size:1.5rem;letter-spacing:-0.04em;">${ChatProto.escapeHtml(step.label)}</h2>
+          <p>${ChatProto.codeWrap(step.summary)}</p>
+          ${step.evidence ? ChatProto.evidenceMarkup(step.evidence) : ""}
+          ${step.cards ? ChatProto.cardsMarkup(step.cards) : ""}
+          ${step.followups ? ChatProto.followupsMarkup(step.followups) : ""}
+        `;
+      }
+
+      if (step.kind === "operator") {
+        return `
+          <div class="panel-heading">Operator steer</div>
+          <h2 style="margin:0;font-size:1.5rem;letter-spacing:-0.04em;">Guided operator input</h2>
+          <p>${ChatProto.codeWrap(step.prompt)}</p>
+        `;
+      }
+
+      return `
+        <div class="panel-heading">Checkpoint</div>
+        <h2 style="margin:0;font-size:1.5rem;letter-spacing:-0.04em;">${ChatProto.escapeHtml(step.label)}</h2>
+        <p>${ChatProto.escapeHtml(step.detail)}</p>
+      `;
+    }
+
+    function selectStation(id) {
+      stationMap.forEach((value, key) => {
+        value.node.classList.toggle("is-active", key === id);
+      });
+      const step = stationMap.get(id).step;
+      railDetail.innerHTML = detailMarkup(step);
+      railEvidence.innerHTML = ChatProto.evidenceMarkup(step.evidence || mission.evidence);
+      setRailIntents(step.followups);
+      railComposer.textContent = step.kind === "operator" ? step.prompt.replaceAll("`", "") : (step.followups && step.followups[0]) || "Ask Oracle about this mission";
+    }
+
+    const controller = ChatProto.createSequencer({
+      steps,
+      gap: 1400,
+      onReset() {
+        stationMap.clear();
+        railTrack.innerHTML = "";
+        railDetail.innerHTML = detailMarkup();
+        railEvidence.innerHTML = ChatProto.evidenceMarkup(mission.evidence);
+        setRailIntents();
+        railComposer.textContent = "Ask Oracle about this mission";
+      },
+      onStep(step, index) {
+        const id = `station-${index}`;
+        const title = step.kind === "system" ? step.label : (step.label || "Operator");
+        const body = step.kind === "operator" ? step.prompt : (step.summary || step.detail);
+        const node = document.createElement("button");
+        node.type = "button";
+        node.className = "station fade-up";
+        node.innerHTML = `
+          <span class="eyebrow">${ChatProto.escapeHtml(step.phase)}</span>
+          <h3>${ChatProto.escapeHtml(title)}</h3>
+          <p>${ChatProto.escapeHtml(body.replaceAll("`", ""))}</p>
+        `;
+        node.addEventListener("click", () => selectStation(id));
+        railTrack.appendChild(node);
+        stationMap.set(id, { node, step });
+        selectStation(id);
+        railTrack.scrollTo({ left: railTrack.scrollWidth, behavior: "smooth" });
+      }
+    });
+
+    ChatProto.bindReplay(document.querySelector(".replay-button"), controller);
+
+    railIntents.addEventListener("click", (event) => {
+      const pill = event.target.closest(".intent-pill");
+      if (!pill) {
+        return;
+      }
+      railComposer.textContent = pill.textContent;
+    });
+  </script>
+</body>
+</html>

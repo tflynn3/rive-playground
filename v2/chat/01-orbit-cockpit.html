@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orbit Cockpit</title>
+  <link rel="stylesheet" href="./shared.css">
+  <script src="./shared.js"></script>
+  <style>
+    body {
+      background:
+        radial-gradient(circle at 14% 14%, rgba(121, 237, 255, 0.14), transparent 22%),
+        radial-gradient(circle at 86% 12%, rgba(119, 255, 214, 0.12), transparent 18%),
+        linear-gradient(180deg, #051018, #0b1824 60%, #07131d);
+      font-family: Bahnschrift, "Aptos", "Segoe UI", sans-serif;
+    }
+
+    .orbit-stage {
+      display: grid;
+      grid-template-columns: 118px minmax(0, 1fr) 290px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .phase-shell,
+    .drawer-shell {
+      position: sticky;
+      top: 18px;
+      padding: 16px;
+      border-radius: 28px;
+      border: 1px solid rgba(121, 237, 255, 0.14);
+      background: rgba(5, 14, 21, 0.82);
+      box-shadow: var(--shadow);
+    }
+
+    .phase-rail {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .phase-pill {
+      display: grid;
+      gap: 3px;
+      min-height: 64px;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .phase-pill span {
+      font-size: 0.9rem;
+    }
+
+    .phase-pill small {
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .phase-done {
+      border-color: rgba(120, 255, 205, 0.2);
+      background: rgba(120, 255, 205, 0.08);
+    }
+
+    .phase-current {
+      border-color: rgba(121, 237, 255, 0.28);
+      background: linear-gradient(180deg, rgba(121, 237, 255, 0.18), rgba(121, 237, 255, 0.06));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 22px rgba(121, 237, 255, 0.12);
+    }
+
+    .orbit-main {
+      display: grid;
+      gap: 16px;
+    }
+
+    .orbit-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) 340px;
+      gap: 18px;
+      padding: 22px;
+      border-radius: 34px;
+      border: 1px solid rgba(121, 237, 255, 0.16);
+      background:
+        radial-gradient(circle at 80% 20%, rgba(121, 237, 255, 0.08), transparent 30%),
+        linear-gradient(180deg, rgba(11, 29, 41, 0.96), rgba(6, 15, 22, 0.92));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .orbit-copy {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .orbit-copy h2 {
+      margin: 0;
+      font-size: clamp(2rem, 3.6vw, 3.4rem);
+      line-height: 0.94;
+      letter-spacing: -0.05em;
+      max-width: 11ch;
+    }
+
+    .orbit-copy p {
+      margin: 0;
+      max-width: 60ch;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .next-action-card {
+      padding: 16px 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .next-action-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.08rem;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+    }
+
+    .context-strip {
+      padding: 16px 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(3, 10, 16, 0.52);
+    }
+
+    .mission-core {
+      position: relative;
+      min-height: 360px;
+      border-radius: 30px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        radial-gradient(circle at center, rgba(116, 252, 233, 0.08), transparent 28%),
+        linear-gradient(180deg, rgba(4, 11, 17, 0.94), rgba(7, 17, 26, 0.94));
+    }
+
+    .mission-core::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(121, 237, 255, 0.08);
+    }
+
+    .core-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 138px;
+      height: 138px;
+      margin: -69px 0 0 -69px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(181, 255, 242, 0.92), rgba(76, 211, 255, 0.2) 58%, transparent 74%);
+      box-shadow: 0 0 38px rgba(121, 237, 255, 0.28);
+    }
+
+    .core-ring {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border-radius: 50%;
+      border: 1px solid rgba(121, 237, 255, 0.18);
+      transform-origin: center;
+    }
+
+    .ring-a {
+      width: 186px;
+      height: 186px;
+      margin: -93px 0 0 -93px;
+      animation: orbitA 12s linear infinite;
+    }
+
+    .ring-b {
+      width: 262px;
+      height: 262px;
+      margin: -131px 0 0 -131px;
+      border-style: dashed;
+      animation: orbitB 18s linear infinite reverse;
+    }
+
+    .ring-c {
+      width: 318px;
+      height: 318px;
+      margin: -159px 0 0 -159px;
+      opacity: 0.6;
+      animation: pulseShell 4s ease-in-out infinite;
+    }
+
+    .orbit-node {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #8fffd4, #6fdcff);
+      box-shadow: 0 0 18px rgba(121, 237, 255, 0.4);
+    }
+
+    .node-a {
+      left: calc(50% + 74px);
+      top: calc(50% - 7px);
+      animation: orbitA 12s linear infinite;
+      transform-origin: -74px 7px;
+    }
+
+    .node-b {
+      left: calc(50% - 7px);
+      top: calc(50% - 131px);
+      background: linear-gradient(180deg, #ffd987, #88f4ff);
+      animation: orbitB 18s linear infinite reverse;
+      transform-origin: 7px 131px;
+    }
+
+    .core-meter {
+      position: absolute;
+      left: 22px;
+      right: 22px;
+      bottom: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .meter-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      width: 34%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #8fffd4, #77dfff);
+      box-shadow: 0 0 18px rgba(121, 237, 255, 0.34);
+      transition: width 300ms ease;
+    }
+
+    .orbit-thread-shell {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 32px;
+      border: 1px solid rgba(121, 237, 255, 0.14);
+      background: rgba(5, 14, 21, 0.82);
+      box-shadow: var(--shadow);
+    }
+
+    .thread-list {
+      display: grid;
+      gap: 14px;
+      max-height: 760px;
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    .thread-block {
+      padding: 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .thread-block h3 {
+      margin: 8px 0 10px;
+      font-size: 1.16rem;
+      letter-spacing: -0.03em;
+    }
+
+    .thread-block p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .oracle-block {
+      background: linear-gradient(180deg, rgba(14, 33, 48, 0.94), rgba(9, 18, 27, 0.9));
+    }
+
+    .operator-block {
+      display: grid;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .system-block {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(121, 237, 255, 0.06);
+    }
+
+    .system-block p {
+      max-width: 54ch;
+    }
+
+    .drawer-shell {
+      display: grid;
+      gap: 12px;
+    }
+
+    .drawer-handle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 54px;
+      padding: 0 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .drawer-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 220ms ease;
+    }
+
+    .drawer-panel.is-open {
+      max-height: 420px;
+    }
+
+    .drawer-panel-inner {
+      display: grid;
+      gap: 14px;
+      padding: 6px 0 0;
+    }
+
+    .orbit-composer {
+      position: sticky;
+      bottom: 14px;
+      z-index: 3;
+      backdrop-filter: blur(12px);
+    }
+
+    @keyframes orbitA {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes orbitB {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+
+    @keyframes pulseShell {
+      0%, 100% { transform: scale(0.98); opacity: 0.48; }
+      50% { transform: scale(1.02); opacity: 0.78; }
+    }
+
+    @media (max-width: 1120px) {
+      .orbit-stage {
+        grid-template-columns: 1fr;
+      }
+
+      .phase-shell,
+      .drawer-shell {
+        position: static;
+      }
+
+      .orbit-hero {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="proto-shell">
+    <script>
+      document.write(ChatProto.headerMarkup({
+        title: "Orbit Cockpit",
+        eyebrow: "Prototype 01",
+        note: "The mission becomes a center-weighted cockpit: one objective, one animated core, one live thread, and proof hidden behind pull-out drawers."
+      }));
+    </script>
+
+    <section class="orbit-stage">
+      <aside class="phase-shell">
+        <div class="panel-heading">Mission Rail</div>
+        <div class="phase-rail" id="phaseRail"></div>
+      </aside>
+
+      <section class="orbit-main">
+        <section class="orbit-hero">
+          <div class="orbit-copy">
+            <div class="status-row" id="metaRow"></div>
+            <div>
+              <h2>Restore staging readiness</h2>
+              <p>Mission-first layout with chat reduced to guided sequence blocks. The thread stays central while proof and links recede into drawers.</p>
+            </div>
+            <div class="next-action-card">
+              <div class="panel-heading">What should happen next</div>
+              <strong id="nextActionValue"></strong>
+            </div>
+            <div class="context-strip">
+              <div class="panel-heading">Live Context Strip</div>
+              <div class="mini-chip-row" id="contextStrip"></div>
+            </div>
+          </div>
+          <div class="mission-core">
+            <div class="core-center"></div>
+            <div class="core-ring ring-a"></div>
+            <div class="core-ring ring-b"></div>
+            <div class="core-ring ring-c"></div>
+            <div class="orbit-node node-a"></div>
+            <div class="orbit-node node-b"></div>
+            <div class="core-meter">
+              <div class="status-row">
+                <span class="status-pill" data-tone="cool">Mission core</span>
+                <span class="status-pill" data-tone="warn" id="coreState">Diagnosing</span>
+              </div>
+              <div class="meter-track"><div class="meter-fill" id="meterFill"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="orbit-thread-shell">
+          <div class="panel-heading">Mission Flow</div>
+          <div class="thread-list" id="threadList"></div>
+        </section>
+
+        <section class="composer orbit-composer">
+          <div class="panel-heading">Oracle Intents</div>
+          <div class="intent-row" id="intentRow"></div>
+          <div class="composer-input" id="composerInput">Ask Oracle about this mission</div>
+        </section>
+      </section>
+
+      <aside class="drawer-shell">
+        <div class="panel-heading">Secondary Drawers</div>
+        <button class="drawer-handle" type="button" data-target="proofDrawer">
+          <span>Mission Proof</span>
+          <span class="muted">tap</span>
+        </button>
+        <div class="drawer-panel is-open" id="proofDrawer">
+          <div class="drawer-panel-inner">
+            <div class="mini-chip-row" id="proofChips"></div>
+            <div class="thread-block">
+              <div class="panel-heading">Frozen Snapshot</div>
+              <p>Oracle is anchored to live runtime, the current release tag, and the last known ready revision. Detailed provenance is present but hidden until needed.</p>
+            </div>
+          </div>
+        </div>
+
+        <button class="drawer-handle" type="button" data-target="linksDrawer">
+          <span>Links</span>
+          <span class="muted">tap</span>
+        </button>
+        <div class="drawer-panel" id="linksDrawer">
+          <div class="drawer-panel-inner" id="linksPanel"></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+  <script>
+    const mission = ChatProto.mission;
+    const steps = ChatProto.story;
+    const phaseRail = document.getElementById("phaseRail");
+    const metaRow = document.getElementById("metaRow");
+    const nextActionValue = document.getElementById("nextActionValue");
+    const contextStrip = document.getElementById("contextStrip");
+    const proofChips = document.getElementById("proofChips");
+    const linksPanel = document.getElementById("linksPanel");
+    const threadList = document.getElementById("threadList");
+    const intentRow = document.getElementById("intentRow");
+    const composerInput = document.getElementById("composerInput");
+    const meterFill = document.getElementById("meterFill");
+    const coreState = document.getElementById("coreState");
+
+    metaRow.innerHTML = mission.meta.map(ChatProto.statusPillMarkup).join("");
+    nextActionValue.textContent = mission.nextAction;
+    contextStrip.innerHTML = mission.evidence.map(ChatProto.chipMarkup).join("");
+    proofChips.innerHTML = mission.evidence.map(ChatProto.chipMarkup).join("");
+    linksPanel.innerHTML = ChatProto.entityListMarkup(mission.entities) + ChatProto.entityListMarkup(mission.links.map((item) => ({ label: item.kind, value: item.label })));
+    ChatProto.applyPhaseRail(phaseRail, "diagnose");
+
+    function setIntentRow(items) {
+      const values = items && items.length ? items : mission.quickAsks.slice(0, 4);
+      intentRow.innerHTML = values.map((item) => `<button class="intent-pill" type="button">${ChatProto.escapeHtml(item)}</button>`).join("");
+    }
+
+    setIntentRow();
+
+    function phaseLabel(phase) {
+      if (phase === "decide") {
+        return "Deciding";
+      }
+      if (phase === "act") {
+        return "Acting";
+      }
+      if (phase === "verify") {
+        return "Verifying";
+      }
+      return "Diagnosing";
+    }
+
+    function progressWidth(index) {
+      return `${32 + ((index + 1) / steps.length) * 58}%`;
+    }
+
+    function renderBlock(step) {
+      if (step.kind === "oracle") {
+        return `
+          <article class="thread-block oracle-block fade-up">
+            <span class="eyebrow">${ChatProto.escapeHtml(step.label)}</span>
+            <h3>${ChatProto.escapeHtml(step.label)}</h3>
+            <p>${ChatProto.codeWrap(step.summary)}</p>
+            ${step.evidence ? ChatProto.evidenceMarkup(step.evidence) : ""}
+            ${step.cards ? ChatProto.cardsMarkup(step.cards) : ""}
+            ${step.followups ? ChatProto.followupsMarkup(step.followups) : ""}
+          </article>
+        `;
+      }
+
+      if (step.kind === "operator") {
+        return `
+          <article class="thread-block operator-block fade-up">
+            <span class="action-kicker">Operator</span>
+            <p>${ChatProto.codeWrap(step.prompt)}</p>
+          </article>
+        `;
+      }
+
+      return `
+        <article class="thread-block system-block fade-up">
+          <div>
+            <span class="action-kicker">Checkpoint</span>
+            <h3>${ChatProto.escapeHtml(step.label)}</h3>
+            <p>${ChatProto.escapeHtml(step.detail)}</p>
+          </div>
+          <span class="status-pill" data-tone="cool">${ChatProto.escapeHtml(step.phase)}</span>
+        </article>
+      `;
+    }
+
+    const controller = ChatProto.createSequencer({
+      steps,
+      gap: 1450,
+      onReset() {
+        threadList.innerHTML = "";
+        ChatProto.applyPhaseRail(phaseRail, "diagnose");
+        contextStrip.innerHTML = mission.evidence.map(ChatProto.chipMarkup).join("");
+        setIntentRow();
+        composerInput.textContent = "Ask Oracle about this mission";
+        meterFill.style.width = "34%";
+        coreState.textContent = "Diagnosing";
+      },
+      onStep(step, index) {
+        threadList.insertAdjacentHTML("beforeend", renderBlock(step));
+        threadList.scrollTop = threadList.scrollHeight;
+        ChatProto.applyPhaseRail(phaseRail, step.phase);
+        contextStrip.innerHTML = (step.evidence || mission.evidence).map(ChatProto.chipMarkup).join("");
+        proofChips.innerHTML = (step.evidence || mission.evidence).map(ChatProto.chipMarkup).join("");
+        setIntentRow(step.followups);
+        composerInput.textContent = step.kind === "operator" ? step.prompt.replaceAll("`", "") : (step.followups && step.followups[0]) || "Ask Oracle about this mission";
+        meterFill.style.width = progressWidth(index);
+        coreState.textContent = phaseLabel(step.phase);
+      }
+    });
+
+    ChatProto.bindReplay(document.querySelector(".replay-button"), controller);
+
+    document.querySelectorAll(".drawer-handle").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.getElementById(button.dataset.target).classList.toggle("is-open");
+      });
+    });
+
+    intentRow.addEventListener("click", (event) => {
+      const pill = event.target.closest(".intent-pill");
+      if (!pill) {
+        return;
+      }
+      composerInput.textContent = pill.textContent;
+    });
+  </script>
+</body>
+</html>
